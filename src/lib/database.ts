@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { PromptAnalysis, DatabaseAnalysis, User } from './types'
+import { generateEmbedding } from './vectorization'
 
 export async function saveAnalysisToDatabase(analysis: PromptAnalysis): Promise<void> {
   const user = await supabase.auth.getUser()
@@ -22,13 +23,29 @@ export async function saveAnalysisToDatabase(analysis: PromptAnalysis): Promise<
     response_time_ms: analysis.responseTimeMs || 0,
   }
 
-  const { error } = await supabase
-    .from('prompt_analyses')
-    .insert(dbAnalysis)
+  try {
+    const embedding = await generateEmbedding(analysis.prompt)
+    const dataWithEmbedding = { ...dbAnalysis, vector_embedding: embedding }
+    
+    const { error } = await supabase
+      .from('prompt_analyses')
+      .insert(dataWithEmbedding)
 
-  if (error) {
-    console.error('Failed to save analysis to database:', error)
-    throw new Error('Failed to save analysis')
+    if (error) {
+      console.error('Failed to save analysis to database:', error)
+      throw new Error('Failed to save analysis')
+    }
+  } catch (embeddingError) {
+    console.warn('Failed to generate embedding, saving without it:', embeddingError)
+    
+    const { error } = await supabase
+      .from('prompt_analyses')
+      .insert(dbAnalysis)
+
+    if (error) {
+      console.error('Failed to save analysis to database:', error)
+      throw new Error('Failed to save analysis')
+    }
   }
 }
 

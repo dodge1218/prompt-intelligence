@@ -205,6 +205,490 @@ This reference connects with:
 
 ---
 
+## 📊 Aggregate Query Examples
+
+### Vector-Powered Discovery Patterns
+
+These examples demonstrate how vectorization enables powerful aggregate analysis capabilities.
+
+#### Example 1: Most Novel Prompts Across Population
+
+```sql
+-- Find the top 100 most novel prompts across all users
+-- Useful for identifying breakthrough patterns
+SELECT 
+  id,
+  prompt,
+  (ice_score->>'idea')::float AS novelty_score,
+  pie_tier,
+  pie_primary_category,
+  created_at
+FROM prompt_analyses
+WHERE vector_embedding IS NOT NULL
+ORDER BY (ice_score->>'idea')::float DESC
+LIMIT 100;
+```
+
+**Use Case**: Identify prompts that push boundaries and create new categories. These are the G2+ patterns that define new paradigms.
+
+**Expected Output**:
+- Tier 3 strategic prompts with novelty >90
+- Self-authoring and Kairos category dominance
+- Temporal clustering around cultural breakthrough moments
+
+---
+
+#### Example 2: Semantic Prompt Families
+
+```sql
+-- Find all prompts semantically similar to a "master prompt"
+-- Groups prompts into families based on vector similarity
+WITH master_prompt AS (
+  SELECT vector_embedding 
+  FROM prompt_analyses 
+  WHERE id = 'prompt-master-xyz'
+)
+SELECT 
+  pa.id,
+  pa.prompt,
+  pa.pie_primary_category,
+  1 - (pa.vector_embedding <=> mp.vector_embedding) AS similarity,
+  pa.created_at
+FROM prompt_analyses pa
+CROSS JOIN master_prompt mp
+WHERE pa.vector_embedding IS NOT NULL
+  AND 1 - (pa.vector_embedding <=> mp.vector_embedding) > 0.6
+ORDER BY similarity DESC
+LIMIT 50;
+```
+
+**Use Case**: Cluster prompts into thematic families (e.g., "code debugging", "creative storytelling", "self-reflection"). Essential for RePrompt architecture and loop detection.
+
+**Expected Output**:
+- 5-10 distinct prompt families per user
+- High intra-family similarity (>0.8)
+- Low inter-family similarity (<0.5)
+
+---
+
+#### Example 3: Novelty Distribution by Category
+
+```sql
+-- Analyze how novelty varies across PIE categories
+SELECT 
+  pie_primary_category,
+  COUNT(*) AS prompt_count,
+  AVG((ice_score->>'idea')::float) AS avg_novelty,
+  STDDEV((ice_score->>'idea')::float) AS novelty_stddev,
+  MIN((ice_score->>'idea')::float) AS min_novelty,
+  MAX((ice_score->>'idea')::float) AS max_novelty,
+  PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY (ice_score->>'idea')::float) AS median_novelty
+FROM prompt_analyses
+WHERE vector_embedding IS NOT NULL
+GROUP BY pie_primary_category
+ORDER BY avg_novelty DESC;
+```
+
+**Use Case**: Understand which categories naturally produce more novel prompts. Helps calibrate novelty expectations per category.
+
+**Expected Output**:
+| Category | Avg Novelty | Std Dev |
+|----------|-------------|---------|
+| self-authoring | 78.5 | 12.3 |
+| kairos | 75.2 | 15.8 |
+| strategic | 68.9 | 18.4 |
+| builder | 52.3 | 22.1 |
+| loops | 35.7 | 14.9 |
+| dopamine | 28.4 | 11.2 |
+
+---
+
+#### Example 4: User Evolution Trajectory
+
+```sql
+-- Track how a user's prompt sophistication evolves over time
+WITH user_timeline AS (
+  SELECT 
+    DATE_TRUNC('week', created_at) AS week,
+    AVG((ice_score->>'idea')::float) AS avg_novelty,
+    AVG((ice_score->>'overall')::float) AS avg_overall,
+    AVG(pie_tier::float) AS avg_tier,
+    COUNT(*) AS prompt_count
+  FROM prompt_analyses
+  WHERE user_id = 'user-123'
+    AND vector_embedding IS NOT NULL
+  GROUP BY week
+)
+SELECT 
+  week,
+  avg_novelty,
+  avg_overall,
+  avg_tier,
+  prompt_count,
+  LAG(avg_novelty) OVER (ORDER BY week) AS prev_week_novelty,
+  avg_novelty - LAG(avg_novelty) OVER (ORDER BY week) AS novelty_delta
+FROM user_timeline
+ORDER BY week DESC;
+```
+
+**Use Case**: Detect Chrono → Kairos transitions. Identify periods of rapid growth or stagnation (loops).
+
+**Expected Output Pattern**:
+- Slow growth phase (weeks 1-4): Tier 1-2, low novelty variance
+- Breakthrough period (weeks 5-6): Novelty spike +20-30 points
+- Plateau or regression (weeks 7-10): Loop behavior, decreasing novelty
+
+---
+
+#### Example 5: Duplicate Detection at Scale
+
+```sql
+-- Find clusters of near-duplicate prompts across users
+-- Identifies viral prompt templates and copy-paste behavior
+WITH prompt_pairs AS (
+  SELECT 
+    p1.id AS id1,
+    p2.id AS id2,
+    p1.prompt AS prompt1,
+    p2.prompt AS prompt2,
+    p1.user_id AS user1,
+    p2.user_id AS user2,
+    1 - (p1.vector_embedding <=> p2.vector_embedding) AS similarity
+  FROM prompt_analyses p1
+  JOIN prompt_analyses p2 ON p1.id < p2.id
+  WHERE p1.vector_embedding IS NOT NULL
+    AND p2.vector_embedding IS NOT NULL
+    AND p1.user_id != p2.user_id  -- Cross-user only
+)
+SELECT *
+FROM prompt_pairs
+WHERE similarity > 0.95
+ORDER BY similarity DESC
+LIMIT 100;
+```
+
+**Use Case**: Identify memetic spread - prompts that go viral or template convergence. Essential for PIE Compression Ratio calculation.
+
+**Expected Output**:
+- Common templates: "Write a [X] about [Y]" variations
+- Viral prompts from social media / Reddit
+- Course material copy-paste patterns
+
+---
+
+#### Example 6: RePrompt Candidate Selection
+
+```sql
+-- Identify high-value prompts that were never followed up on
+-- These are "unresolved prompt seeds" ripe for resurfacing
+WITH prompt_sequences AS (
+  SELECT 
+    id,
+    prompt,
+    (ice_score->>'idea')::float AS novelty,
+    (ice_score->>'exploitability')::float AS exploitability,
+    pie_tier,
+    created_at,
+    LAG(created_at) OVER (PARTITION BY user_id ORDER BY created_at) AS prev_prompt_time,
+    LEAD(created_at) OVER (PARTITION BY user_id ORDER BY created_at) AS next_prompt_time
+  FROM prompt_analyses
+  WHERE user_id = 'user-123'
+    AND vector_embedding IS NOT NULL
+)
+SELECT 
+  id,
+  prompt,
+  novelty,
+  exploitability,
+  pie_tier,
+  created_at,
+  EXTRACT(EPOCH FROM (next_prompt_time - created_at))/3600 AS hours_until_next,
+  CASE 
+    WHEN next_prompt_time IS NULL THEN 'never_followed_up'
+    WHEN EXTRACT(EPOCH FROM (next_prompt_time - created_at))/3600 > 24 THEN 'abandoned'
+    ELSE 'continued'
+  END AS follow_up_status
+FROM prompt_sequences
+WHERE 
+  novelty > 60
+  AND exploitability > 50
+  AND pie_tier >= 2
+  AND (next_prompt_time IS NULL OR EXTRACT(EPOCH FROM (next_prompt_time - created_at))/3600 > 24)
+ORDER BY novelty DESC, exploitability DESC
+LIMIT 20;
+```
+
+**Use Case**: Power the RePrompt feature - surface high-potential prompts that the user started but never completed.
+
+**Expected Output**:
+- 10-20 prompts per user
+- High novelty + high exploitability combo
+- Clear temporal gaps indicating abandonment
+- Tier 2-3 prompts (sophisticated but incomplete)
+
+---
+
+#### Example 7: Guardrail Pressure Heatmap
+
+```sql
+-- Aggregate guardrail testing behavior patterns
+-- Requires additional GRF (Guardrail Flag) metadata
+SELECT 
+  pie_primary_category,
+  COUNT(*) FILTER (WHERE (ice_score->>'exploitability')::float > 80) AS high_exploit_count,
+  AVG((ice_score->>'cost')::float) AS avg_cost,
+  COUNT(*) FILTER (WHERE pie_tier = 3) AS tier3_count,
+  COUNT(*) AS total_prompts,
+  ROUND(100.0 * COUNT(*) FILTER (WHERE pie_tier = 3) / COUNT(*), 2) AS tier3_percentage
+FROM prompt_analyses
+WHERE vector_embedding IS NOT NULL
+GROUP BY pie_primary_category
+ORDER BY tier3_percentage DESC;
+```
+
+**Use Case**: Identify categories where users push boundaries most aggressively. Maps cultural curiosity and red-team behavior.
+
+**Expected Output**:
+| Category | Tier 3 % | High Exploit Count |
+|----------|----------|-------------------|
+| strategic | 35.7% | 142 |
+| kairos | 28.4% | 89 |
+| builder | 12.1% | 45 |
+| loops | 3.2% | 8 |
+
+---
+
+#### Example 8: Temporal Pattern Analysis - Best Day/Time
+
+```sql
+-- Identify when users produce their most novel prompts
+-- Chronos (routine) vs Kairos (breakthrough) time mapping
+SELECT 
+  EXTRACT(DOW FROM created_at) AS day_of_week,  -- 0=Sunday, 6=Saturday
+  EXTRACT(HOUR FROM created_at) AS hour_of_day,
+  COUNT(*) AS prompt_count,
+  AVG((ice_score->>'idea')::float) AS avg_novelty,
+  AVG((ice_score->>'overall')::float) AS avg_overall,
+  COUNT(*) FILTER (WHERE pie_tier = 3) AS tier3_count
+FROM prompt_analyses
+WHERE user_id = 'user-123'
+  AND vector_embedding IS NOT NULL
+GROUP BY day_of_week, hour_of_day
+HAVING COUNT(*) >= 5  -- Minimum sample size
+ORDER BY avg_novelty DESC
+LIMIT 20;
+```
+
+**Use Case**: Detect Kairos pockets - specific times when users are in peak creative/strategic mode. Useful for notification timing.
+
+**Expected Output**:
+- Late night (11PM-2AM): Highest novelty, Tier 3 concentration
+- Early morning (6-8AM): Strategic prompts, high focus
+- Mid-afternoon (2-4PM): Loop behavior, lower novelty
+- Weekends: Higher overall scores, more experimental
+
+---
+
+#### Example 9: Cross-Category Transitions
+
+```sql
+-- Analyze how users move between PIE categories
+-- Identifies learning patterns and expertise development
+WITH category_transitions AS (
+  SELECT 
+    user_id,
+    pie_primary_category AS from_category,
+    LEAD(pie_primary_category) OVER (PARTITION BY user_id ORDER BY created_at) AS to_category,
+    created_at
+  FROM prompt_analyses
+  WHERE vector_embedding IS NOT NULL
+)
+SELECT 
+  from_category,
+  to_category,
+  COUNT(*) AS transition_count,
+  AVG(EXTRACT(EPOCH FROM (LEAD(created_at) OVER (ORDER BY created_at) - created_at))/3600) AS avg_hours_between
+FROM category_transitions
+WHERE to_category IS NOT NULL
+  AND from_category != to_category
+GROUP BY from_category, to_category
+HAVING COUNT(*) >= 10
+ORDER BY transition_count DESC;
+```
+
+**Use Case**: Map expertise evolution pathways. Common transitions: dopamine → loops → builder → strategic → kairos.
+
+**Expected Output - Sankey Flow**:
+```
+dopamine (32%) → loops (45%)
+loops (28%) → builder (38%)
+builder (22%) → strategic (31%)
+strategic (18%) → kairos (12%)
+```
+
+---
+
+#### Example 10: Population Entropy (P.E.T.) Calculation
+
+```sql
+-- Calculate Prompt Entropy over Time
+-- Measures diversity vs convergence in prompt corpus
+WITH prompt_vectors AS (
+  SELECT 
+    DATE_TRUNC('month', created_at) AS month,
+    vector_embedding
+  FROM prompt_analyses
+  WHERE vector_embedding IS NOT NULL
+),
+pairwise_distances AS (
+  SELECT 
+    pv1.month,
+    AVG(pv1.vector_embedding <=> pv2.vector_embedding) AS avg_distance,
+    STDDEV(pv1.vector_embedding <=> pv2.vector_embedding) AS distance_variance
+  FROM prompt_vectors pv1
+  JOIN prompt_vectors pv2 ON pv1.month = pv2.month
+  GROUP BY pv1.month
+)
+SELECT 
+  month,
+  avg_distance AS entropy_proxy,
+  distance_variance,
+  CASE 
+    WHEN avg_distance > 0.7 THEN 'High Diversity'
+    WHEN avg_distance > 0.5 THEN 'Moderate Diversity'
+    ELSE 'Low Diversity (Convergence)'
+  END AS diversity_status
+FROM pairwise_distances
+ORDER BY month DESC;
+```
+
+**Use Case**: Track population-level creativity. Declining entropy = convergence toward templates. Rising entropy = innovation.
+
+**Expected Output Trend**:
+- Early months: High entropy (0.75+) - exploration
+- Mid-term: Declining entropy (0.55-0.65) - template adoption
+- Mature: Stabilized entropy (0.60) - established patterns
+
+---
+
+### Advanced Aggregation Patterns
+
+#### Pattern A: Multi-Dimensional Scoring
+
+```sql
+-- Create composite "Breakthrough Score" combining multiple metrics
+SELECT 
+  id,
+  prompt,
+  (
+    (ice_score->>'idea')::float * 0.4 +           -- 40% novelty weight
+    (ice_score->>'exploitability')::float * 0.3 + -- 30% exploitability weight
+    (100 - (ice_score->>'cost')::float) * 0.2 +   -- 20% low-cost weight (inverted)
+    (pie_tier * 15) * 0.1                         -- 10% tier weight
+  ) AS breakthrough_score,
+  pie_tier,
+  pie_primary_category
+FROM prompt_analyses
+WHERE vector_embedding IS NOT NULL
+  AND user_id = 'user-123'
+ORDER BY breakthrough_score DESC
+LIMIT 25;
+```
+
+---
+
+#### Pattern B: Cohort Analysis
+
+```sql
+-- Compare users who joined in same time period
+-- Identifies high-performers vs average users
+WITH user_cohorts AS (
+  SELECT 
+    user_id,
+    DATE_TRUNC('month', MIN(created_at)) AS cohort_month
+  FROM prompt_analyses
+  GROUP BY user_id
+),
+cohort_stats AS (
+  SELECT 
+    uc.cohort_month,
+    pa.user_id,
+    COUNT(*) AS total_prompts,
+    AVG((pa.ice_score->>'overall')::float) AS avg_score,
+    MAX(pa.pie_tier) AS max_tier_reached,
+    AVG((pa.ice_score->>'idea')::float) AS avg_novelty
+  FROM user_cohorts uc
+  JOIN prompt_analyses pa ON uc.user_id = pa.user_id
+  WHERE pa.vector_embedding IS NOT NULL
+  GROUP BY uc.cohort_month, pa.user_id
+)
+SELECT 
+  cohort_month,
+  COUNT(DISTINCT user_id) AS users_in_cohort,
+  AVG(total_prompts) AS avg_prompts_per_user,
+  AVG(avg_score) AS cohort_avg_score,
+  AVG(max_tier_reached) AS cohort_avg_max_tier,
+  AVG(avg_novelty) AS cohort_avg_novelty
+FROM cohort_stats
+GROUP BY cohort_month
+ORDER BY cohort_month DESC;
+```
+
+---
+
+#### Pattern C: Predictive Churn Signals
+
+```sql
+-- Identify users at risk of dropping off
+-- Based on declining engagement and novelty
+WITH user_metrics AS (
+  SELECT 
+    user_id,
+    MAX(created_at) AS last_prompt_date,
+    COUNT(*) AS total_prompts,
+    AVG((ice_score->>'overall')::float) AS avg_score,
+    STDDEV((ice_score->>'overall')::float) AS score_variance,
+    COUNT(*) FILTER (
+      WHERE created_at > NOW() - INTERVAL '7 days'
+    ) AS prompts_last_week,
+    COUNT(*) FILTER (
+      WHERE created_at > NOW() - INTERVAL '30 days'
+    ) AS prompts_last_month
+  FROM prompt_analyses
+  WHERE vector_embedding IS NOT NULL
+  GROUP BY user_id
+)
+SELECT 
+  user_id,
+  last_prompt_date,
+  total_prompts,
+  avg_score,
+  prompts_last_week,
+  prompts_last_month,
+  EXTRACT(EPOCH FROM (NOW() - last_prompt_date))/86400 AS days_since_last,
+  CASE 
+    WHEN EXTRACT(EPOCH FROM (NOW() - last_prompt_date))/86400 > 30 THEN 'High Risk'
+    WHEN prompts_last_week = 0 AND prompts_last_month < 5 THEN 'Medium Risk'
+    WHEN score_variance < 10 THEN 'Low Engagement'
+    ELSE 'Active'
+  END AS churn_risk
+FROM user_metrics
+WHERE total_prompts >= 10  -- Only established users
+ORDER BY days_since_last DESC;
+```
+
+---
+
+### Integration with Existing Frameworks
+
+These aggregate patterns connect with:
+- **LEXICON.md**: Individual metric definitions that feed these aggregates
+- **PHASE2_CHAIN_ANALYSIS.md**: Chain-level patterns built on these queries
+- **POPULATION_ANALYSIS.md**: Meta-layer analytics using these primitives
+- **VECTORIZATION_PRD.md**: Technical implementation of vector-powered queries
+
+---
+
 ## 📝 Notes on Usage
 
 **When to Use This Reference**:

@@ -13,6 +13,17 @@ This file contains all SQL commands needed to set up the Money GPT database sche
 
 ---
 
+## 0. Enable pgvector Extension
+
+**IMPORTANT: Run this first before creating any tables!**
+
+```sql
+-- Enable the pgvector extension for vector embeddings
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+---
+
 ## 1. Create Tables
 
 ```sql
@@ -27,7 +38,7 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Prompt analyses table
+-- Prompt analyses table with vector embeddings
 CREATE TABLE IF NOT EXISTS prompt_analyses (
   id TEXT PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -44,7 +55,8 @@ CREATE TABLE IF NOT EXISTS prompt_analyses (
   suggestions TEXT[] NOT NULL DEFAULT '{}',
   model_version TEXT NOT NULL DEFAULT 'gpt-4o-v1',
   response_time_ms INTEGER NOT NULL DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  vector_embedding VECTOR(1536)
 );
 
 -- Model metrics table (for tracking improvement over time)
@@ -87,6 +99,18 @@ CREATE INDEX IF NOT EXISTS idx_analyses_tier
 
 CREATE INDEX IF NOT EXISTS idx_analyses_category 
   ON prompt_analyses(pie_primary_category);
+
+-- Vector similarity search index (HNSW for fast approximate nearest neighbor search)
+CREATE INDEX IF NOT EXISTS idx_analyses_vector_embedding 
+  ON prompt_analyses 
+  USING hnsw (vector_embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
+
+-- Alternative: IVFFlat index (use if HNSW is not available)
+-- CREATE INDEX IF NOT EXISTS idx_analyses_vector_embedding 
+--   ON prompt_analyses 
+--   USING ivfflat (vector_embedding vector_cosine_ops)
+--   WITH (lists = 100);
 
 -- Index for transactions
 CREATE INDEX IF NOT EXISTS idx_transactions_user 
@@ -186,6 +210,130 @@ BEGIN
   WHERE id = user_uuid;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to find similar prompts by vector similarity
+CREATE OR REPLACE FUNCTION find_similar_prompts(
+  query_embedding VECTOR(1536),
+  match_threshold FLOAT DEFAULT 0.7,
+  match_count INTEGER DEFAULT 10,
+  filter_user_id UUID DEFAULT NULL
+)
+RETURNS TABLE (
+  id TEXT,
+  prompt TEXT,
+  ice_overall INTEGER,
+  pie_tier INTEGER,
+  similarity FLOAT
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    pa.id,
+    pa.prompt,
+    pa.ice_overall,
+    pa.pie_tier,
+    1 - (pa.vector_embedding <=> query_embedding) AS similarity
+  FROM prompt_analyses pa
+  WHERE 
+    (filter_user_id IS NULL OR pa.user_id = filter_user_id)
+    AND pa.vector_embedding IS NOT NULL
+    AND 1 - (pa.vector_embedding <=> query_embedding) > match_threshold
+  ORDER BY pa.vector_embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get top N novel prompts (highest idea score)
+CREATE OR REPLACE FUNCTION get_top_novel_prompts(
+  user_uuid UUID,
+  limit_count INTEGER DEFAULT 10
+)
+RETURNS TABLE (
+  id TEXT,
+  prompt TEXT,
+  ice_idea INTEGER,
+  ice_overall INTEGER,
+  pie_tier INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    pa.id,
+    pa.prompt,
+    pa.ice_idea,
+    pa.ice_overall,
+    pa.pie_tier,
+    pa.created_at
+  FROM prompt_analyses pa
+  WHERE pa.user_id = user_uuid
+  ORDER BY pa.ice_idea DESC, pa.ice_overall DESC
+  LIMIT limit_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get top exploitable prompts (highest exploitability score)
+CREATE OR REPLACE FUNCTION get_top_exploitable_prompts(
+  user_uuid UUID,
+  limit_count INTEGER DEFAULT 10
+)
+RETURNS TABLE (
+  id TEXT,
+  prompt TEXT,
+  ice_exploitability INTEGER,
+  ice_overall INTEGER,
+  pie_tier INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    pa.id,
+    pa.prompt,
+    pa.ice_exploitability,
+    pa.ice_overall,
+    pa.pie_tier,
+    pa.created_at
+  FROM prompt_analyses pa
+  WHERE pa.user_id = user_uuid
+  ORDER BY pa.ice_exploitability DESC, pa.ice_overall DESC
+  LIMIT limit_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get prompts by tier and category
+CREATE OR REPLACE FUNCTION get_prompts_by_classification(
+  user_uuid UUID,
+  target_tier INTEGER DEFAULT NULL,
+  target_category TEXT DEFAULT NULL,
+  limit_count INTEGER DEFAULT 50
+)
+RETURNS TABLE (
+  id TEXT,
+  prompt TEXT,
+  ice_overall INTEGER,
+  pie_tier INTEGER,
+  pie_primary_category TEXT,
+  created_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    pa.id,
+    pa.prompt,
+    pa.ice_overall,
+    pa.pie_tier,
+    pa.pie_primary_category,
+    pa.created_at
+  FROM prompt_analyses pa
+  WHERE 
+    pa.user_id = user_uuid
+    AND (target_tier IS NULL OR pa.pie_tier = target_tier)
+    AND (target_category IS NULL OR pa.pie_primary_category = target_category)
+  ORDER BY pa.created_at DESC
+  LIMIT limit_count;
+END;
+$$ LANGUAGE plpgsql;
 ```
 
 ---
