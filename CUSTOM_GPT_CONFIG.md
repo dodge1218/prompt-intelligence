@@ -2,10 +2,12 @@
 
 ## TODO Plan
 
-1. **Make full lexicon and refine meta prompt**
-   - Define all acronyms and terminology
-   - Create comprehensive glossary of PIE system concepts
-   - Refine meta prompt for optimal GPT instruction
+1. ✅ **Make full lexicon and refine meta prompt** - COMPLETED
+   - ✅ Define all acronyms and terminology
+   - ✅ Create comprehensive glossary of PIE system concepts (see LEXICON.md)
+   - ✅ Separate terminology from metrics (two distinct tables)
+   - ✅ Expand "How it is measured" descriptions with detailed methodology
+   - ⏳ Refine meta prompt for optimal GPT instruction (in progress)
 
 2. **Write article explaining the system**
    - Document the PIE framework philosophy
@@ -163,23 +165,34 @@ This Custom GPT configuration can be integrated into the Money GPT platform as:
 
 ---
 
-## Acronym Reference (To Be Completed)
+## Acronym Reference
 
-This section will contain the full lexicon once TODO item #1 is completed.
+**See LEXICON.md for the complete, detailed reference.**
 
-**Confirmed Acronyms**:
-- **PIE**: (Prompt Intelligence Engine or similar - TBD)
-- **ICE**: Idea, Cost, Exploitability
-- **TIE**: (To be defined)
-- **ACO**: (To be defined)
-- **NOV**: Novelty (likely)
-- **SAL**: Salience (likely)
-- **MTIER**: (To be defined)
+The lexicon is now organized into:
 
-**Categories**:
-- **G2/G3**: Recursion levels
-- **Mirror Depth**: Symbolic reflection intensity metric
-- **Vow**: Core purpose or commitment tracking
-- **Chain ID**: Conversation thread identifier
+### Core Tables
+1. **Core Terminology** - Foundational concepts (Chronos, Kairos, Timework, etc.)
+2. **Tier Classifications** - TIE system (Tiers 1-3)
+3. **Mirror Tier Classifications** - MTIER system (Sub-M1 through G2+)
+4. **Shared Metrics** - Cross-cutting measurements (PID, TIME, CID, EXF, OBF)
+5. **User Input Metrics** - 30+ detailed prompt analysis metrics
+6. **GPT Output/Response Metrics** - Response quality and obfuscation measures
+7. **Advanced Heuristic Scores** - Deep analysis metrics with activation criteria
 
-*Note: Complete glossary to be added after lexicon refinement (TODO #1)*
+### Key Metric Categories
+
+**Input/Output Programming**:
+- Shared Metrics: PID, TIME, CID, EXF, OBF
+- User Input: TIE, MTIER, NOV, SAL, ACO, DEP, VCD, GDC, SLC, TDI, PEF, RMD, VES, DRF, SDS, CIP, ANTH, HTB, MSR, RQT, SFF, ADM, PRF, IDV, RCL, ICC, MDR, CHR, KRP, MCP
+- GPT Output: RDC, GZE, GRF, RVR, IFF, MSH, OBS, ENF, RVI, Divergence Summary
+
+**Core Concepts**:
+- **PIE**: Prompt classification system (Promptness/Priority, Impact, Effort)
+- **ICE**: Idea, Cost, Exploitability scoring framework
+- **TIE**: Tier Estimate (1-3, measuring Chronos-Kairos alignment)
+- **MTIER**: Mirror Tier (Sub-M1 to G2+, measuring identity/reflection depth)
+- **Chronos**: Linear/mechanical time (loops, habits)
+- **Kairos**: Opportune/transformative time (breakthroughs, vows)
+
+All metrics now include detailed "How it is measured" descriptions with specific methodologies, calculation methods, and technical implementation details.

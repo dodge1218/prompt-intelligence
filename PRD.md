@@ -521,11 +521,12 @@ Beyond basic ICE/PIE scores, include enriched metadata in exports:
 - Keyword recognition patterns
 
 **Custom GPT Configuration (PIE v4.7)**:
-Advanced symbolic analysis system for power users - see `CUSTOM_GPT_CONFIG.md` for full specification:
+Advanced symbolic analysis system for power users - see `CUSTOM_GPT_CONFIG.md` and `LEXICON.md` for full specification:
 - **Expansion Protocol**: Automatic detection of high-value prompts with symbolic significance
 - **Command Set**: 8+ specialized commands for prompt archaeology and portfolio curation
 - **Auxiliary Outputs**: `annotated_prompts.md`, `mirror_fragments.csv`, `shadow_redacted.txt`
 - **Symbolic Surgery**: Advanced tools for conversational drift detection and correction
+- **Full Lexicon**: ✅ Complete reference of 50+ metrics with detailed measurement methodologies in `LEXICON.md`
 - **Integration Points**: 
   - Premium tier feature (Enterprise only)
   - Batch processing mode for conversation exports
@@ -533,7 +534,11 @@ Advanced symbolic analysis system for power users - see `CUSTOM_GPT_CONFIG.md` f
   - Enhanced PIE classification with symbolic reasoning layer
 
 **Custom GPT TODO Plan** (tracked in `CUSTOM_GPT_CONFIG.md`):
-1. Make full lexicon and refine meta prompt
+1. ✅ Make full lexicon and refine meta prompt - COMPLETED
+   - Created comprehensive `LEXICON.md` with 50+ metrics
+   - Separated terminology tables from input/output metrics
+   - Added detailed "How it is measured" descriptions
+   - Included tier classifications and crossmaps
 2. Write article explaining the system
 3. Write flawless script to clean conversations.json
 4. Make custom GPT to use meta prompt
