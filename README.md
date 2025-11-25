@@ -2,6 +2,8 @@
 
 A sophisticated, monetized prompt analysis platform that delivers ICE + PIE scoring behind a payment gate, with Supabase persistence and continuously improving AI models.
 
+> **Status: 75% Complete (Stage 1 MVP)** | **Latest: Iteration 4 - UI/UX Enhancements** | See `CURRENT_STATUS.md` for detailed progress
+
 ## 🎯 What is Money GPT?
 
 Money GPT is a premium SaaS application that analyzes prompts using advanced frameworks:
@@ -11,26 +13,36 @@ Money GPT is a premium SaaS application that analyzes prompts using advanced fra
 
 ## ✨ Key Features
 
+### Core Functionality
 - 🔒 **Payment-Gated Access**: No outputs visible without paid subscription
 - 💾 **Persistent Storage**: All analyses stored in Supabase for cross-device access
-- 🧠 **Semantic Search**: 3072-dimensional vector embeddings for intelligent prompt discovery
-- 🔍 **Duplicate Detection**: Automatic similarity detection prevents redundant analyses
-- 🎯 **RePrompt Discovery**: Find your most novel and exploitable prompts instantly
+- 🤖 **Multi-Model AI**: Choose from 5 AI models (GPT-4o, GPT-4o Mini, Gemini 1.5 Pro/Flash/1.0)
+- 💰 **97% Cost Savings**: Gemini Flash reduces API costs dramatically
+- 🔐 **Full Authentication**: Sign up, sign in, persistent sessions
 - 📊 **Premium Analytics**: Track your prompt evolution over time
-- 🤖 **Learning Models**: AI improves with every analysis
 - 📥 **Export Capabilities**: Download your data as JSON or CSV
 - 🎨 **Premium UI**: Beautiful, modern interface with emerald/purple/gold theme
 
-### 🆕 Vectorization Features (Iteration 2 - COMPLETE)
-
+### Advanced Features (Iteration 2-4)
 - ✅ **Real-Time Similarity Detection**: See related prompts as you type
 - ✅ **Discover Tab**: Browse top novel and exploitable prompts
 - ✅ **Duplicate Prevention**: Smart alerts before duplicate submissions
 - ✅ **Semantic Navigation**: Click-through exploration of related analyses
 - ✅ **3072-Dim Embeddings**: Superior quality with OpenAI text-embedding-3-large
 - ✅ **Sub-50ms Search**: HNSW indexes for lightning-fast vector queries
+- ✅ **Copy to Clipboard**: One-click prompt copying
+- ✅ **History Search & Sort**: Find past prompts instantly
+- ✅ **Prompt Templates**: 6 example prompts for quick start
 
-See `VECTORIZATION_COMPLETE.md` and `ITERATION2_SUMMARY.md` for full details.
+### Recent Updates (Iteration 4 - January 2025)
+- ✅ Copy-to-clipboard functionality with visual feedback
+- ✅ Timestamp display on all analyses
+- ✅ Real-time history search and filtering
+- ✅ Sorting options (date, score, tier)
+- ✅ Prompt templates for new users
+- ✅ Improved environment documentation
+
+See `ITERATION4_SUMMARY.md` for complete details.
 
 ## 🚀 Quick Start
 
@@ -102,13 +114,13 @@ See `TODO.md` for complete implementation checklist with time estimates.
 
 ### Tech Stack
 - **Frontend**: React 19 + TypeScript + Vite
-- **Styling**: Tailwind CSS + shadcn/ui components
+- **Styling**: Tailwind CSS + shadcn/ui v4 components
 - **Database**: Supabase (PostgreSQL + pgvector)
 - **Vector Search**: OpenAI text-embedding-3-large (3072 dimensions)
-- **Authentication**: Supabase Auth (to be implemented)
-- **Payments**: Stripe (to be implemented)
-- **AI Models**: OpenAI GPT-4o, Google Gemini (optional)
-- **Deployment**: Vercel
+- **Authentication**: Supabase Auth ✅ Implemented (Iteration 3)
+- **AI Models**: OpenAI GPT-4o/Mini, Google Gemini 1.5 Pro/Flash/1.0 ✅ (Iteration 3)
+- **Payments**: Stripe (UI ready, integration pending)
+- **Deployment**: Vercel (pending)
 
 ### Database Schema
 ```
@@ -133,23 +145,28 @@ See `SUPABASE_SETUP.md` for full schema and setup instructions.
 ```
 src/
 ├── components/
-│   ├── ui/                # shadcn components
-│   ├── PaymentGate.tsx    # Payment modal
-│   ├── LockedContent.tsx  # Content blur/lock
-│   ├── RadarChart.tsx     # ICE score visualization
-│   ├── TierMatrix.tsx     # PIE category grid
-│   ├── SimilarPrompts.tsx # Real-time similarity detection
-│   ├── DiscoverPrompts.tsx # RePrompt discovery UI
-│   └── DuplicateWarning.tsx # Duplicate alerts
+│   ├── ui/                    # 40+ shadcn v4 components
+│   ├── AuthModal.tsx          # Authentication modal (Iteration 3)
+│   ├── UserMenu.tsx           # User profile dropdown (Iteration 3)
+│   ├── ModelSelector.tsx      # AI model chooser (Iteration 3)
+│   ├── PromptTemplates.tsx    # Example prompts (Iteration 4)
+│   ├── PaymentGate.tsx        # Payment modal
+│   ├── LockedContent.tsx      # Content blur/lock
+│   ├── RadarChart.tsx         # ICE score visualization
+│   ├── TierMatrix.tsx         # PIE category grid
+│   ├── SimilarPrompts.tsx     # Real-time similarity detection
+│   ├── DiscoverPrompts.tsx    # RePrompt discovery UI
+│   └── DuplicateWarning.tsx   # Duplicate alerts
 ├── lib/
-│   ├── supabase.ts        # Supabase client config
-│   ├── database.ts        # Database operations
-│   ├── scoring.ts         # Analysis logic
-│   ├── vectorization.ts   # Vector embeddings & search
-│   ├── types.ts           # TypeScript definitions
-│   └── export.ts          # CSV/JSON export
-├── App.tsx                # Main application
-└── index.css              # Theme and styles
+│   ├── supabase.ts            # Supabase client config
+│   ├── database.ts            # Database operations
+│   ├── scoring.ts             # Analysis logic (multi-model)
+│   ├── gemini.ts              # Google Gemini integration
+│   ├── vectorization.ts       # Vector embeddings & search
+│   ├── types.ts               # TypeScript definitions
+│   └── export.ts              # CSV/JSON export
+├── App.tsx                    # Main application
+└── index.css                  # Theme and styles
 ```
 
 ## 🔐 Environment Variables
@@ -201,14 +218,28 @@ See `.env.example` for full list.
 
 ## 📚 Documentation
 
-- `PRD.md` - Full product requirements and design specs (✅ Updated with completed vectorization features)
+### Quick Start
+- `README.md` - This file, project overview
+- `CURRENT_STATUS.md` - **Detailed progress report (75% complete)**
+- `.env.example` - Environment configuration reference
+
+### Implementation Guides
 - `TODO.md` - Implementation checklist and task breakdown
 - `SUPABASE_SETUP.md` - Complete database setup guide with pgvector
-- `VECTORIZATION_PRD.md` - Complete vectorization architecture and implementation
-- `VECTORIZATION_COMPLETE.md` - Iteration 2 completion report
-- `ITERATION2_SUMMARY.md` - What changed in this iteration
+- `PRD.md` - Full product requirements and design specs
+
+### Iteration Summaries
+- `ITERATION4_SUMMARY.md` - **Latest: UI/UX Enhancements**
+- `ITERATION3_SUMMARY.md` - Multi-Model AI + Authentication
+- `ITERATION2_SUMMARY.md` - Vectorization & Semantic Search
+- `ITERATION4_CHECKLIST.md` - Polish and quality tasks
+
+### Technical References
+- `VECTORIZATION_PRD.md` - Complete vectorization architecture
+- `VECTORIZATION_COMPLETE.md` - Vectorization completion report
 - `SEMANTIC_SEARCH_REFERENCE.md` - Quick reference for vector queries
-- `.env.example` - Environment configuration reference
+- `PHASE2_CHAIN_ANALYSIS.md` - Future: chain-level analysis
+- `CUSTOM_GPT_CONFIG.md` - Advanced symbolic analysis (PIE v4.7)
 
 ## 🤝 Contributing
 
@@ -222,32 +253,47 @@ Money GPT application code is proprietary.
 
 ## 🎯 Roadmap
 
-### Phase 1 (MVP) - Current
+### Stage 1 (MVP) - 75% Complete ⚡
 - [x] Core analysis functionality
 - [x] Payment gate UI
 - [x] Database integration layer
-- [x] **Vector embeddings & semantic search (Iteration 2)**
-- [x] **Duplicate detection**
-- [x] **RePrompt discovery features**
-- [ ] Supabase schema creation
-- [ ] Vercel deployment
-- [ ] Stripe integration
+- [x] Vector embeddings & semantic search
+- [x] Duplicate detection
+- [x] RePrompt discovery features
+- [x] Multi-model AI support (5 models)
+- [x] Full authentication system
+- [x] UI/UX polish (copy, search, sort, templates)
+- [ ] **Supabase schema creation** ⚠️ Critical
+- [ ] **Vercel deployment** ⚠️ Critical
+- [ ] **Stripe integration** ⚠️ Critical
 
-### Phase 2
-- [ ] User authentication
-- [ ] Model improvement tracking
-- [ ] Advanced analytics dashboard
-- [ ] API access for Pro users
-- [ ] Prompt clustering visualization
-- [ ] Population-level analytics
+**Timeline**: 1-2 weeks to complete remaining items
 
-### Phase 3
-- [ ] Team collaboration
-- [ ] Custom model training
-- [ ] White-label options
-- [ ] Enterprise features
+### Stage 2 (User Testing) - Next Milestone 🎯
+- [ ] Recruit 10-15 testers
+- [ ] Collect feedback systematically
+- [ ] UX iteration based on real users
+- [ ] Performance optimization
+- [ ] Bug fixes from user reports
+- [ ] Mobile experience validation
+
+**⚠️ IMPORTANT**: Do NOT skip Stage 2. User testing is mandatory before Stage 3.
+
+### Stage 3 (Advanced Features) - Future
+- [ ] RePrompt Architecture
 - [ ] Chain-level analysis (PIE v4.7)
-- [ ] Cross-user discovery (opt-in)
+- [ ] Batch prompt processing
+- [ ] API access for Pro users
+- [ ] Team collaboration features
+- [ ] Advanced analytics dashboard
+
+### Stage 4 (Cost Optimization) - Long Term
+- [ ] Custom model training
+- [ ] Bulk data collection
+- [ ] ML inference service
+- [ ] Self-hosted deployment options
+
+See `PRD.md` and `TODO.md` for complete roadmap details.
 
 ## 💬 Support
 

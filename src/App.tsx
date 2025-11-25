@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { Brain, ClockCounterClockwise, Sparkle, Lightning, DownloadSimple, FileArrowDown, CurrencyDollar, Database, MagnifyingGlass } from '@phosphor-icons/react'
+import { Brain, ClockCounterClockwise, Sparkle, Lightning, DownloadSimple, FileArrowDown, CurrencyDollar, Database, MagnifyingGlass, Copy, Check } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { analyzePrompt, getTierColor, TIER_DESCRIPTIONS, type AIModel } from '@/lib/scoring'
 import type { PromptAnalysis } from '@/lib/types'
@@ -24,6 +26,7 @@ import { DuplicateWarning } from '@/components/DuplicateWarning'
 import { ModelSelector } from '@/components/ModelSelector'
 import { AuthModal } from '@/components/AuthModal'
 import { UserMenu } from '@/components/UserMenu'
+import { PromptTemplates } from '@/components/PromptTemplates'
 import { saveAnalysisToDatabase, getAnalysesFromDatabase, checkUserHasCredits, decrementUserCredits } from '@/lib/database'
 import { detectDuplicate } from '@/lib/vectorization'
 import { isDevelopmentMode, devBypassPayment } from '@/lib/supabase'
@@ -45,6 +48,9 @@ function App() {
   } | null>(null)
   const [userId, setUserId] = useState<string>('')
   const [selectedModel, setSelectedModel] = useKV<AIModel>('selected-ai-model', 'gpt-4o')
+  const [copiedPrompt, setCopiedPrompt] = useState(false)
+  const [historyFilter, setHistoryFilter] = useState('')
+  const [historySortBy, setHistorySortBy] = useState<'date' | 'score' | 'tier'>('date')
 
   useEffect(() => {
     loadHistoryFromDatabase()
@@ -178,6 +184,42 @@ function App() {
     }
   }
 
+  const copyPromptToClipboard = async () => {
+    if (!currentAnalysis) return
+    
+    try {
+      await navigator.clipboard.writeText(currentAnalysis.prompt)
+      setCopiedPrompt(true)
+      toast.success('Prompt copied to clipboard')
+      setTimeout(() => setCopiedPrompt(false), 2000)
+    } catch (error) {
+      toast.error('Failed to copy to clipboard')
+    }
+  }
+
+  const filteredHistory = (history || []).filter(item => {
+    if (!historyFilter.trim()) return true
+    const searchLower = historyFilter.toLowerCase()
+    return (
+      item.prompt.toLowerCase().includes(searchLower) ||
+      item.pieClassification.primaryCategory.toLowerCase().includes(searchLower) ||
+      `tier ${item.pieClassification.tier}`.includes(searchLower)
+    )
+  })
+
+  const sortedHistory = [...filteredHistory].sort((a, b) => {
+    switch (historySortBy) {
+      case 'date':
+        return b.timestamp - a.timestamp
+      case 'score':
+        return b.iceScore.overall - a.iceScore.overall
+      case 'tier':
+        return a.pieClassification.tier - b.pieClassification.tier
+      default:
+        return 0
+    }
+  })
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto p-6 max-w-7xl">
@@ -276,30 +318,60 @@ function App() {
               </CardContent>
             </Card>
 
+            {!promptInput && !currentAnalysis && (
+              <PromptTemplates onSelectTemplate={setPromptInput} />
+            )}
+
             {currentAnalysis && (
               <>
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold">Analysis Results</h2>
-                  {!analysisLocked && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <DownloadSimple className="w-4 h-4 mr-2" />
-                          Export
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold">Analysis Results</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Analyzed {new Date(currentAnalysis.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {!analysisLocked && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={copyPromptToClipboard}
+                        >
+                          {copiedPrompt ? (
+                            <>
+                              <Check className="w-4 h-4 mr-2" />
+                              Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4 mr-2" />
+                              Copy Prompt
+                            </>
+                          )}
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleExportCurrent('json')}>
-                          <FileArrowDown className="w-4 h-4 mr-2" />
-                          Export as JSON
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleExportCurrent('csv')}>
-                          <FileArrowDown className="w-4 h-4 mr-2" />
-                          Export as CSV
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <DownloadSimple className="w-4 h-4 mr-2" />
+                              Export
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleExportCurrent('json')}>
+                              <FileArrowDown className="w-4 h-4 mr-2" />
+                              Export as JSON
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleExportCurrent('csv')}>
+                              <FileArrowDown className="w-4 h-4 mr-2" />
+                              Export as CSV
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
+                    )}
+                  </div>
                 </div>
                 
                 <LockedContent isLocked={analysisLocked} onUnlock={() => setShowPaymentGate(true)}>
@@ -467,6 +539,27 @@ function App() {
                 </div>
               </CardHeader>
               <CardContent>
+                {history && history.length > 0 && (
+                  <div className="mb-4 flex gap-3 items-center">
+                    <Input
+                      id="history-search"
+                      placeholder="Search prompts..."
+                      value={historyFilter}
+                      onChange={(e) => setHistoryFilter(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Select value={historySortBy} onValueChange={(value: any) => setHistorySortBy(value)}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Sort by..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="date">Newest First</SelectItem>
+                        <SelectItem value="score">Highest Score</SelectItem>
+                        <SelectItem value="tier">Best Tier</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 {isLoadingFromDB ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Database className="w-12 h-12 mx-auto mb-3 opacity-50 animate-pulse" />
@@ -478,10 +571,22 @@ function App() {
                     <p>No prompts analyzed yet</p>
                     <p className="text-sm">Start by analyzing your first prompt</p>
                   </div>
+                ) : filteredHistory.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <MagnifyingGlass className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No prompts match your search</p>
+                    <p className="text-sm">Try different keywords</p>
+                  </div>
                 ) : (
-                  <ScrollArea className="h-[600px] pr-4">
-                    <div className="space-y-3">
-                      {history.map((item) => (
+                  <>
+                    {historyFilter && (
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Found {filteredHistory.length} of {history.length} prompts
+                      </p>
+                    )}
+                    <ScrollArea className="h-[600px] pr-4">
+                      <div className="space-y-3">
+                        {sortedHistory.map((item) => (
                         <Card
                           key={item.id}
                           className="cursor-pointer hover:bg-accent/5 transition-colors"
@@ -512,6 +617,7 @@ function App() {
                       ))}
                     </div>
                   </ScrollArea>
+                </>
                 )}
               </CardContent>
             </Card>
