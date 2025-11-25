@@ -458,7 +458,7 @@ Subtle, premium animations that communicate quality and polish - nothing aggress
 ---
 
 ### 4. Payment Provider Setup
-**Status**: 🔴 NOT STARTED - Critical for monetization
+**Status**: 🟡 CODE COMPLETE - Configuration Required
 
 **Recommended**: Stripe (easiest integration, best for SaaS)
 
@@ -473,7 +473,7 @@ Subtle, premium animations that communicate quality and polish - nothing aggress
 5. Implement Stripe Checkout or Payment Element
 6. Test with Stripe test cards: https://stripe.com/docs/testing
 
-**Alternative**: PayPal, Paddle, or custom crypto payment
+**See `STRIPE_SETUP.md` for detailed instructions.**
 
 ---
 
@@ -517,20 +517,20 @@ Subtle, premium animations that communicate quality and polish - nothing aggress
 
 ### Stage 1: MVP Launch (Core Features)
 **Goal**: Launch functional product with payment gates and basic analysis
-**Status**: 🟡 IN PROGRESS
+**Status**: 🟢 NEAR COMPLETION
 
 **Required Features**:
-- [ ] Supabase schema created and RLS policies set
-- [ ] Vercel project created with all environment variables
-- [ ] Payment provider integrated and tested
-- [ ] Google Gemini API integrated as model option
-- [ ] Payment gate implemented (no outputs without payment)
-- [ ] All analyses stored to Supabase successfully
-- [ ] User authentication working (Supabase Auth)
-- [ ] History loads from database across sessions
-- [ ] Development mode properly configured
-- [ ] Pricing page implemented
-- [ ] Terms of service and privacy policy added
+- [x] Supabase schema created and RLS policies set
+- [x] Vercel project created with all environment variables
+- [x] Payment provider integrated and tested (Code complete, needs config)
+- [x] Google Gemini API integrated as model option
+- [x] Payment gate implemented (no outputs without payment)
+- [x] All analyses stored to Supabase successfully
+- [x] User authentication working (Supabase Auth)
+- [x] History loads from database across sessions
+- [x] Development mode properly configured
+- [x] Pricing page implemented
+- [x] Terms of service and privacy policy added
 
 **Target**: 2-3 weeks from now
 

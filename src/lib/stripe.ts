@@ -4,11 +4,11 @@ import { supabase } from './supabase';
 // Initialize Stripe with the public key from environment variables
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || '');
 
-// Price IDs for different tiers (replace with actual Stripe Price IDs)
+// Price IDs for different tiers
 export const STRIPE_PRICES = {
-  basic: 'price_basic_placeholder', // Replace with actual price ID
-  pro: 'price_pro_placeholder',     // Replace with actual price ID
-  enterprise: 'price_enterprise_placeholder' // Replace with actual price ID
+  basic: import.meta.env.VITE_STRIPE_PRICE_BASIC || 'price_basic_placeholder',
+  pro: import.meta.env.VITE_STRIPE_PRICE_PRO || 'price_pro_placeholder',
+  enterprise: import.meta.env.VITE_STRIPE_PRICE_ENTERPRISE || 'price_enterprise_placeholder'
 };
 
 export async function checkout(tier: 'basic' | 'pro' | 'enterprise') {
