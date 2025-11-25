@@ -53,7 +53,7 @@ function App() {
     similarity?: number
   } | null>(null)
   const [userId, setUserId] = useState<string>('')
-  const [selectedModel, setSelectedModel] = useLocalStorage<AIModel>('selected-ai-model', 'gpt-4o')
+  const [selectedModel, setSelectedModel] = useLocalStorage<AIModel>('selected-ai-model', 'gemini-2.5-flash')
   const [copiedPrompt, setCopiedPrompt] = useState(false)
   const [historyFilter, setHistoryFilter] = useState('')
   const [historySortBy, setHistorySortBy] = useState<'date' | 'score' | 'tier'>('date')

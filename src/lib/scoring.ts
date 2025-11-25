@@ -51,10 +51,24 @@ Return a JSON object with this exact structure:
   
   try {
     if (modelName.startsWith('gemini-')) {
-      if (!isGeminiConfigured()) {
-        throw new Error('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to your .env.local file.')
+      if (isGeminiConfigured()) {
+        response = await callGemini(analysisPromptText, modelName as GeminiModel, true)
+      } else {
+        // Fallback to server-side API for Gemini
+         const apiResponse = await fetch('/api/analyze-gemini', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: analysisPromptText, model: modelName })
+         });
+         
+         if (!apiResponse.ok) {
+            const errorData = await apiResponse.json().catch(() => ({}));
+            throw new Error(errorData.error || `Failed to analyze with Gemini (${apiResponse.status})`);
+         }
+         
+         const data = await apiResponse.json();
+         response = data.result;
       }
-      response = await callGemini(analysisPromptText, modelName as GeminiModel, true)
     } else {
       // Check if we are in production environment (Vercel)
       if (!import.meta.env.DEV) {
@@ -244,11 +258,15 @@ export function estimateCost(tokenCount: number, model: AIModel): number {
 }
 
 export function getAvailableModels(): AIModel[] {
-  const models: AIModel[] = ['gpt-4o', 'gpt-4o-mini']
-  
-  if (isGeminiConfigured()) {
-    models.push('gemini-3.0-pro', 'gemini-2.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash')
-  }
+  // Always return Gemini models as we can fallback to server-side API
+  const models: AIModel[] = [
+    'gemini-3.0-pro', 
+    'gemini-2.5-flash', 
+    'gemini-1.5-pro', 
+    'gemini-1.5-flash',
+    'gpt-4o', 
+    'gpt-4o-mini'
+  ]
   
   return models
 }
