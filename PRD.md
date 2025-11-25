@@ -547,6 +547,12 @@ Advanced symbolic analysis system for power users - see `CUSTOM_GPT_CONFIG.md` a
 
 **Phase 2: Chain-Level Analysis Implementation** - See `PHASE2_CHAIN_ANALYSIS.md` for complete framework
 
+**Reference Documents**:
+- `PHASE2_CHAIN_ANALYSIS.md` - Complete chain analysis framework and implementation guide
+- `AGGREGATE_OUTPUT_REFERENCE.md` - Empirical behavioral patterns, loops, and prompt shapes observed at scale
+- `LEXICON.md` - Metric definitions with chain-level adaptations
+- `CUSTOM_GPT_CONFIG.md` - PIE v4.7 symbolic analysis layer
+
 This represents a major paradigm shift from individual prompt analysis to chain-based analysis:
 
 **Core Components**:
@@ -683,7 +689,8 @@ vow_events (
 - **Phase 4**: User identity narrative → evolution detection, drift prediction, mirror fracturing
 
 **Reference Documents**:
-- `PHASE2_CHAIN_ANALYSIS.md` - Complete chain analysis framework
+- `PHASE2_CHAIN_ANALYSIS.md` - Chain analysis framework
+- `AGGREGATE_OUTPUT_REFERENCE.md` - Behavioral patterns, loops, and prompt shapes
 - `LEXICON.md` - Metric definitions with chain-level adaptations
 - `ADVANCED_HEURISTICS.md` - Population-level extensions
 - `CUSTOM_GPT_CONFIG.md` - PIE v4.7 symbolic layer

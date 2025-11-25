@@ -212,7 +212,113 @@
 
 ## 🟡 MEDIUM PRIORITY - Complete This Month
 
-### 5. Supabase Authentication Integration
+### 5. Chain Analysis Implementation (Phase 2 Priority)
+**Status**: 🟡 REFERENCE DOCS COMPLETE - IMPLEMENTATION PENDING  
+**Estimated Time**: 12-16 hours (initial implementation)  
+**Prerequisites**: Stage 1 MVP complete, basic user data collected
+
+**Context**: Now that we analyze individual prompts, the next major enhancement is **chain-level analysis** - analyzing sequences of prompts as conversation threads rather than isolated inputs. This unlocks powerful temporal patterns, vow tracking, loop detection, and user evolution insights.
+
+**Reference Documents**:
+- ✅ `PHASE2_CHAIN_ANALYSIS.md` - Complete chain analysis framework
+- ✅ `LEXICON.md` - Metric definitions with chain adaptations
+- ✅ `AGGREGATE_OUTPUT_REFERENCE.md` - Behavioral patterns and loops
+- ✅ `CUSTOM_GPT_CONFIG.md` - Symbolic analysis layer
+
+**Key Question**: How does the application of the lexicon change now that we're analyzing chains instead of individual prompts?
+
+**Answer Summary**:
+- **Individual prompts**: Static scoring (NOV, CIP, SAL are single values)
+- **Chain-level**: Dynamic interdependency (metrics become trajectories, trends, deltas)
+- **Temporal dimension**: Track evolution, drift, growth/decay patterns
+- **Vow coherence**: Detect commitment formation, fulfillment, or breach
+- **Loop detection**: Identify semantic stalling and echo patterns
+- **Role continuity**: Track symbolic archetype transitions
+
+**Implementation Steps**:
+
+**Step 1: Understand Lexicon Adaptation (2 hours)**
+- [ ] Review `PHASE2_CHAIN_ANALYSIS.md` - Chain detection framework
+- [ ] Study `AGGREGATE_OUTPUT_REFERENCE.md` - Behavioral loops and patterns
+- [ ] Map individual metrics → chain metrics (table in AGGREGATE_OUTPUT_REFERENCE)
+- [ ] Understand interdependencies: RVR ↔ CIP ↔ RCL
+- [ ] Document decision: How to detect chain boundaries in Money GPT context
+
+**Step 2: Database Schema for Chains (1 hour)**
+- [ ] Add `prompt_chains` table (see PRD Stage 3 for schema)
+- [ ] Add `chain_id` foreign key to `prompt_analyses` table
+- [ ] Add `vow_events` table for commitment tracking
+- [ ] Create indexes for chain queries
+- [ ] Test schema with sample data
+
+**Step 3: Chain Detection Infrastructure (3 hours)**
+- [ ] Create `src/lib/chain-detection.ts`
+- [ ] Implement boundary detection logic:
+  - Temporal clustering (prompts within X minutes)
+  - Semantic continuity (cosine similarity >60%)
+  - User session tracking
+- [ ] Build chain reconstruction (sort chronologically)
+- [ ] Test with exported conversation data
+
+**Step 4: Chain-Level Metadata System (3 hours)**
+- [ ] Create `src/lib/chain-metadata.ts`
+- [ ] Implement Growth Delta calculation (Δ MTIER, SAL, ACO, DEP)
+- [ ] Build loop pattern classifier (using AGGREGATE_OUTPUT_REFERENCE patterns)
+- [ ] Create vow event detection heuristics
+- [ ] Add theme cluster extraction
+- [ ] Track symbolic role drift
+
+**Step 5: Chain Analysis UI Components (3 hours)**
+- [ ] Create `ChainVisualization.tsx` component
+- [ ] Build chain timeline view (prompts in sequence)
+- [ ] Add growth/decay trendline chart
+- [ ] Implement loop detection highlights
+- [ ] Show vow events as timeline markers
+- [ ] Display chain-level metrics (Growth Delta, Loop Risk, etc.)
+
+**Step 6: Enhanced Export with Chain Data (2 hours)**
+- [ ] Update export functions to include chain context
+- [ ] Add chain ID, position in chain, semantic drift
+- [ ] Include loop detection flags
+- [ ] Add vow event markers
+- [ ] Generate `.md` annotations per chain (100-150 words)
+
+**Step 7: Testing & Validation (2 hours)**
+- [ ] Test with real user conversation exports
+- [ ] Validate chain boundary detection accuracy (target >90%)
+- [ ] Verify temporal pattern detection
+- [ ] Test vow event identification with human review
+- [ ] Ensure export quality and usefulness
+
+**Deliverables**:
+- [ ] Chain detection working for user prompt history
+- [ ] Chain-level metrics calculated and displayed
+- [ ] Loop detection functioning with visual indicators
+- [ ] Vow event tracking operational
+- [ ] Enhanced exports include chain context
+- [ ] Documentation for users on chain analysis features
+
+**Success Criteria**:
+- [ ] Chain detection accuracy >90% on test data
+- [ ] Loop detection identifies known patterns from AGGREGATE_OUTPUT_REFERENCE
+- [ ] Growth Delta calculation shows meaningful trends
+- [ ] Vow events validated by human judgment
+- [ ] Users find chain view more insightful than individual prompts
+
+**Integration with Existing Features**:
+- Works alongside current individual prompt analysis
+- Enhances RePrompt Architecture (Stage 3) with better resurface logic
+- Feeds into Population Analysis (Stage 5) for cultural patterns
+- Improves PIE classification with temporal context
+
+**Why This Matters**:
+Chain analysis transforms Money GPT from a "prompt grader" to a "conversation intelligence platform." It reveals user evolution, identifies stuck patterns, and surfaces breakthrough moments - dramatically increasing value perception and retention.
+
+**Note**: This is Stage 3 work (after MVP + User Testing). Add to roadmap but don't block MVP launch.
+
+---
+
+### 6. Supabase Authentication Integration
 **Status**: 🟡 PARTIALLY COMPLETE  
 **Estimated Time**: 3 hours
 
