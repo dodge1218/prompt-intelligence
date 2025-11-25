@@ -33,6 +33,9 @@ export interface PromptAnalysis {
   pieClassification: PIEClassification
   suggestions?: string[]
   tokenCount: number
+  userId?: string
+  modelVersion?: string
+  responseTimeMs?: number
 }
 
 export interface AnalysisFilters {
@@ -40,4 +43,43 @@ export interface AnalysisFilters {
   category?: PIECategory
   minScore?: number
   dateRange?: [number, number]
+}
+
+export interface User {
+  id: string
+  email: string
+  subscriptionStatus: 'trial' | 'active' | 'expired' | 'none'
+  subscriptionTier: 'basic' | 'pro' | 'enterprise' | 'free'
+  creditsRemaining: number
+  createdAt: string
+}
+
+export interface Transaction {
+  id: string
+  userId: string
+  amount: number
+  currency: string
+  status: 'pending' | 'completed' | 'failed'
+  provider: string
+  creditsPurchased: number
+  createdAt: string
+}
+
+export interface DatabaseAnalysis {
+  id: string
+  user_id: string
+  prompt: string
+  token_count: number
+  ice_idea: number
+  ice_cost: number
+  ice_exploitability: number
+  ice_overall: number
+  pie_tier: number
+  pie_primary_category: string
+  pie_secondary_categories: string[]
+  pie_reasoning: string
+  suggestions: string[]
+  created_at: string
+  model_version: string
+  response_time_ms: number
 }
