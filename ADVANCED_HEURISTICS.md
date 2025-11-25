@@ -280,6 +280,29 @@ This document **extends** rather than **replaces** LEXICON.md. Core terminology,
 
 For any conflicts, LEXICON.md definitions take precedence for base metrics. This document governs advanced analytics only.
 
+### Cross-Reference with POPULATION_ANALYSIS.md
+
+**Advanced heuristics should be treated as variables/vectors within the lexicon framework**, per user instruction. This principle extends to population-level analysis:
+
+- **Individual heuristics** (from this doc) are computed per prompt
+- **Population vectors** (from POPULATION_ANALYSIS.md) aggregate these heuristics across users and time
+- **Recursive refinement**: Population baselines feed back to calibrate individual scoring thresholds
+
+**Example**: If population average NOV score rises from 2.8 to 3.2, the novelty threshold adjusts—what was novel before becomes average. See `POPULATION_ANALYSIS.md` for complete framework on meta-layer analytics.
+
+**Integration Flow**:
+```
+Individual Prompt → LEXICON.md metrics → ADVANCED_HEURISTICS.md scoring
+    ↓
+Database storage with full metadata
+    ↓
+POPULATION_ANALYSIS.md aggregation (when corpus ≥ 50K)
+    ↓
+Population baselines update individual thresholds
+    ↓
+(Recursive improvement loop)
+```
+
 ---
 
 ## Usage Guidelines

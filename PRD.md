@@ -601,10 +601,154 @@ Advanced symbolic analysis system for power users - see `CUSTOM_GPT_CONFIG.md` a
 
 ---
 
+### Stage 5: Population-Level Prompt Analysis (PEAP) (Advanced Analytics)
+**Goal**: Implement meta-layer analytics to reveal cultural cognitive trends, memetic evolution, and collective agency patterns
+**Status**: 🔴 NOT PLANNED YET
+
+**Reference Document**: See `POPULATION_ANALYSIS.md` for complete framework
+
+**Core Features to Implement**:
+- [ ] **Prompt Entropy over Time (P.E.T.)** - Track diversity vs homogeneity drift in prompt corpus
+- [ ] **Global Agency Index (GAI)** - Measure population-level Kairos vs Chronos patterns
+- [ ] **PIE Compression Ratio** - Detect convergence toward master templates
+- [ ] **Viral Prompt Mutation Analysis** - Track memetic evolution and spread patterns
+- [ ] **Guardrail Pressure Heatmap** - Identify boundary-testing patterns and cultural curiosities
+- [ ] **Theme Distribution Tracking** - Measure collective focus (status, escape, optimization, etc.)
+- [ ] **Kairos Pocket Detection** - Identify periods of high collective agency
+- [ ] **Prompt Phylogenetic Tree** - Visualize prompt shape evolution and mutation paths
+
+**Advanced Heuristics Integration**:
+Per `ADVANCED_HEURISTICS.md`, these population metrics should be treated as **aggregate vectors** derived from individual lexicon metrics:
+- Individual NOV scores → Population P.E.T. (entropy distribution)
+- Individual DEP scores → Population GAI (agency density)
+- Individual GDC scores → Guardrail pressure gradients
+- Individual MTIER distribution → Cultural maturation curves
+
+**Database Schema Extensions**:
+```sql
+-- New tables for population analytics
+population_metrics (
+  id UUID PRIMARY KEY,
+  period_start TIMESTAMP,
+  period_end TIMESTAMP,
+  prompt_entropy NUMERIC,
+  global_agency_index NUMERIC,
+  compression_ratio NUMERIC,
+  theme_distribution JSONB,
+  recorded_at TIMESTAMP
+)
+
+prompt_shapes (
+  id UUID PRIMARY KEY,
+  shape_name TEXT,
+  origin_date TIMESTAMP,
+  velocity NUMERIC,
+  salience_index NUMERIC,
+  mutation_rate NUMERIC
+)
+
+guardrail_pressure (
+  id UUID PRIMARY KEY,
+  category TEXT,
+  pressure_score NUMERIC,
+  avg_gdc NUMERIC,
+  recorded_at TIMESTAMP
+)
+```
+
+**Key Use Cases**:
+1. **Pre-train PIE Novelty Classifier**: Use population trends to dynamically calibrate individual novelty thresholds
+2. **Predict Prompt Demand Curves**: Identify rising prompt shapes for feature planning
+3. **Track Memetic Red Team Pressure**: Understand boundary-testing behavior for safety insights
+4. **Prove Tier 3 Rarity**: Marketing data showing elite user behavior patterns
+5. **Detect Kairos Pockets**: Identify transformation periods for strategic product launches
+
+**Research Questions to Answer**:
+- Do expert prompters (G2+) create linguistic gravity wells that influence others?
+- Is there a collective tier ceiling across the population?
+- Can we predict individual user trajectories from population archetypes?
+- What's the relationship between external events and global agency spikes?
+
+**Prerequisites Before Starting**:
+- [ ] Stage 4 complete (50K+ prompt corpus required)
+- [ ] All individual PIE metrics stable and validated
+- [ ] Time-series data infrastructure in place
+- [ ] Statistical analysis and ML forecasting capabilities
+- [ ] Ethical review for population-level analytics
+
+**Implementation Phases**:
+
+**Phase 5.1: Basic Population Analytics**
+- [ ] Daily/weekly/monthly aggregation pipeline
+- [ ] P.E.T. calculation and tracking
+- [ ] Compression ratio analysis
+- [ ] Theme distribution dashboard
+- [ ] Internal analytics dashboard
+
+**Phase 5.2: Advanced Memetic Analysis**
+- [ ] Viral pattern detection system
+- [ ] Prompt phylogenetic tree builder
+- [ ] Guardrail pressure heatmap
+- [ ] GAI calculation and tracking
+- [ ] Kairos pocket detection alerts
+
+**Phase 5.3: Predictive Intelligence**
+- [ ] Time-series forecasting models
+- [ ] Trend prediction (4-week horizon)
+- [ ] User trajectory clustering
+- [ ] Cultural shift anomaly detection
+- [ ] Demand curve forecasting
+
+**Phase 5.4: User-Facing Population Insights**
+- [ ] Public population insights dashboard
+- [ ] "Where you stand" vs population benchmarks
+- [ ] Trend alerts and opportunities
+- [ ] Cultural moment notifications
+
+**Privacy & Ethics Requirements**:
+- [ ] All metrics computed on anonymized aggregates only
+- [ ] No individual user tracking or exposure
+- [ ] User opt-in required for data contribution
+- [ ] Bias detection and demographic accounting
+- [ ] Transparent methodology documentation
+- [ ] Value-aligned metrics (no manipulation)
+
+**Success Criteria**:
+- [ ] 50K+ prompts analyzed with full population metrics
+- [ ] P.E.T. tracked with <5% variance across measurement runs
+- [ ] GAI correlates with known external events (r > 0.7)
+- [ ] Viral pattern detection predicts emerging templates 2+ weeks early with 70%+ accuracy
+- [ ] Kairos pocket detection achieves 80%+ true positive rate
+- [ ] Trend forecasting beats baseline by 50%+ over 4-week horizon
+- [ ] Population baselines improve individual PIE accuracy by 15%+
+- [ ] Zero privacy violations or individual exposure incidents
+
+**Estimated Timeline**: 6-12 months after Stage 4 completion
+
+**Business Value**:
+- Dynamic novelty calibration improves product accuracy
+- Trend prediction informs feature roadmap
+- Kairos timing optimizes marketing and launches
+- Cultural insights differentiate product positioning
+- Research publications establish thought leadership
+
+**Integration Notes**:
+- PEAP is a **meta-layer** above PIE, not a replacement
+- Individual metrics feed population analysis
+- Population baselines recursively improve individual scoring
+- See `LEXICON.md` for individual metrics, `POPULATION_ANALYSIS.md` for population framework
+
+---
+
 ## Current Stage Summary
 
 **We are currently in Stage 1** - building MVP core features. 
 
 **Next immediate milestone**: Complete Stage 1, then conduct structured user testing (Stage 2) before adding advanced features. Do NOT skip user testing - it's critical for product-market fit.
 
-**Model training and bulk data collection (Stage 4) is a future optimization** - only pursue after product is proven successful and API costs become significant.
+**Future Roadmap**:
+- **Stage 3**: Advanced features & RePrompt architecture after user validation
+- **Stage 4**: Model training and bulk data collection for cost optimization
+- **Stage 5**: Population-level prompt analysis (PEAP) for cultural insights and meta-analytics
+
+**New Documentation**: See `POPULATION_ANALYSIS.md` for the complete framework on population-level prompt intelligence. This meta-layer extends individual PIE metrics to reveal cultural cognitive trends, memetic evolution, and collective agency patterns.
