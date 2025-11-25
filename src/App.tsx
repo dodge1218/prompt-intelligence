@@ -8,12 +8,14 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { Brain, ClockCounterClockwise, Sparkle, Lightning } from '@phosphor-icons/react'
+import { Brain, ClockCounterClockwise, Sparkle, Lightning, DownloadSimple, FileArrowDown } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { analyzePrompt, getTierColor, TIER_DESCRIPTIONS } from '@/lib/scoring'
 import type { PromptAnalysis } from '@/lib/types'
 import { RadarChart } from '@/components/RadarChart'
 import { TierMatrix } from '@/components/TierMatrix'
+import { exportToJSON, exportToCSV, exportSingleAnalysisToJSON, exportSingleAnalysisToCSV } from '@/lib/export'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 function App() {
   const [promptInput, setPromptInput] = useState('')
@@ -44,6 +46,33 @@ function App() {
   const loadFromHistory = (analysis: PromptAnalysis) => {
     setCurrentAnalysis(analysis)
     setPromptInput(analysis.prompt)
+  }
+
+  const handleExportCurrent = (format: 'json' | 'csv') => {
+    if (!currentAnalysis) return
+    
+    if (format === 'json') {
+      exportSingleAnalysisToJSON(currentAnalysis)
+      toast.success('Analysis exported as JSON')
+    } else {
+      exportSingleAnalysisToCSV(currentAnalysis)
+      toast.success('Analysis exported as CSV')
+    }
+  }
+
+  const handleExportAll = (format: 'json' | 'csv') => {
+    if (!history || history.length === 0) {
+      toast.error('No analyses to export')
+      return
+    }
+    
+    if (format === 'json') {
+      exportToJSON(history)
+      toast.success(`Exported ${history.length} analyses as JSON`)
+    } else {
+      exportToCSV(history)
+      toast.success(`Exported ${history.length} analyses as CSV`)
+    }
   }
 
   return (
@@ -106,7 +135,29 @@ function App() {
             </Card>
 
             {currentAnalysis && (
-              <div className="grid gap-6 md:grid-cols-2">
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold">Analysis Results</h2>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <DownloadSimple className="w-4 h-4 mr-2" />
+                        Export
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleExportCurrent('json')}>
+                        <FileArrowDown className="w-4 h-4 mr-2" />
+                        Export as JSON
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleExportCurrent('csv')}>
+                        <FileArrowDown className="w-4 h-4 mr-2" />
+                        Export as CSV
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -206,16 +257,41 @@ function App() {
                   </CardContent>
                 </Card>
               </div>
+              </>
             )}
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Prompt History</CardTitle>
-                <CardDescription>
-                  Review your past analyses and track your prompt evolution
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Prompt History</CardTitle>
+                    <CardDescription>
+                      Review your past analyses and track your prompt evolution
+                    </CardDescription>
+                  </div>
+                  {history && history.length > 0 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <DownloadSimple className="w-4 h-4 mr-2" />
+                          Export All
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleExportAll('json')}>
+                          <FileArrowDown className="w-4 h-4 mr-2" />
+                          Export as JSON
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExportAll('csv')}>
+                          <FileArrowDown className="w-4 h-4 mr-2" />
+                          Export as CSV
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {!history || history.length === 0 ? (
