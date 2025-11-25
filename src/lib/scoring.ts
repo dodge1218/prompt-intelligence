@@ -3,7 +3,7 @@ import type { ICEScore, PIEClassification, PromptAnalysis } from './types'
 export async function analyzePrompt(prompt: string): Promise<PromptAnalysis> {
   const tokenCount = estimateTokens(prompt)
   
-  const analysisPrompt = `You are an expert prompt engineer analyzing prompts using two frameworks:
+  const analysisPrompt = spark.llmPrompt`You are an expert prompt engineer analyzing prompts using two frameworks:
 
 ICE Framework:
 - Idea (0-100): Novelty, originality, creative thinking
@@ -39,7 +39,7 @@ Return a JSON object with this exact structure:
   "suggestions": ["<specific improvement 1>", "<specific improvement 2>", "<specific improvement 3>"]
 }`
 
-  const response = await window.spark.llm(analysisPrompt, 'gpt-4o', true)
+  const response = await spark.llm(analysisPrompt, 'gpt-4o', true)
   const data = JSON.parse(response)
   
   const iceScore: ICEScore = {
