@@ -79,7 +79,25 @@ A sophisticated, monetized prompt analysis and scoring platform that uses ICE + 
 
 ## Technical Architecture
 
-### Supabase Integration
+### Supabase Integration with pgvector
+
+**Embedded AI Inside the Database**: Supabase's PostgreSQL with pgvector extension enables native SQL + vector embeddings in the same database. This allows semantic search directly within SQL queries:
+
+```sql
+SELECT *
+FROM prompts
+ORDER BY embedding <#> '[user vector]' -- cosine distance
+LIMIT 10;
+```
+
+This architecture powers features like:
+- **"Similar prompts to this one"** discovery
+- **"Most symbolic prompts like this vector"** search
+- **Duplicate detection** before submission
+- **Semantic clustering** and prompt families
+- **Text-to-SQL** natural language query interface (future)
+- **Admin dashboards** with vector-enhanced analytics (future)
+
 **Database Schema**:
 ```sql
 -- Users table (extends Supabase Auth)
@@ -109,7 +127,8 @@ prompt_analyses (
   suggestions text[],
   created_at timestamp,
   model_version text,
-  response_time_ms integer
+  response_time_ms integer,
+  vector_embedding vector(3072)  -- OpenAI text-embedding-3-large for semantic search
 )
 
 -- Model metrics (for improvement tracking)
@@ -486,6 +505,9 @@ Subtle, premium animations that communicate quality and polish - nothing aggress
 **Status**: 🔴 NOT STARTED
 
 **Features to Add**:
+- [ ] **Vector-powered semantic search** - Implement pgvector embeddings (3072 dimensions) for prompt similarity
+- [ ] **Duplicate detection** - Prevent redundant submissions using vector similarity
+- [ ] **Smart prompt discovery** - "Find prompts like this" and novelty ranking
 - [ ] Batch analysis (CSV upload)
 - [ ] API access for Pro/Enterprise users
 - [ ] Team collaboration features
@@ -497,8 +519,16 @@ Subtle, premium animations that communicate quality and polish - nothing aggress
 - [ ] Error monitoring and alerting (Sentry)
 - [ ] **RePrompt Architecture** - High-value prompt resurfacing toolkit
 - [ ] **Prompt metadata export protocol** - Enhanced CSV/TXT exports with full metadata
-- [ ] **Prompt clustering & families** - Auto-categorize prompts by type/theme
+- [ ] **Prompt clustering & families** - Auto-categorize prompts by type/theme using embeddings
 - [ ] **Custom GPT Configuration (PIE v4.7)** - Advanced symbolic analysis layer
+
+**Vectorization Implementation** (see `VECTORIZATION_PRD.md` for full details):
+- Enable pgvector extension in Supabase
+- Generate 3072-dimensional embeddings using OpenAI `text-embedding-3-large`
+- Store embeddings alongside each prompt analysis
+- Create HNSW indexes for sub-50ms similarity search
+- Build UI for semantic discovery and exploration
+- Implement duplicate detection workflow
 
 **RePrompt Feature Details**:
 The RePrompt Architecture enables users to discover and resurface their most valuable prompts:
@@ -548,6 +578,9 @@ Advanced symbolic analysis system for power users - see `CUSTOM_GPT_CONFIG.md` a
 **Phase 2: Chain-Level Analysis Implementation** - See `PHASE2_CHAIN_ANALYSIS.md` for complete framework
 
 **Reference Documents**:
+- `VECTORIZATION_PRD.md` - Complete vectorization infrastructure and implementation plan
+- `SEMANTIC_SEARCH_REFERENCE.md` - Quick reference for semantic search with pgvector
+- `SUPABASE_SETUP.md` - Database schema and SQL setup scripts
 - `PHASE2_CHAIN_ANALYSIS.md` - Complete chain analysis framework and implementation guide
 - `AGGREGATE_OUTPUT_REFERENCE.md` - Empirical behavioral patterns, loops, and prompt shapes observed at scale
 - `LEXICON.md` - Metric definitions with chain-level adaptations

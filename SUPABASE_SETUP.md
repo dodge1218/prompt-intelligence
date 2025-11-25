@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS prompt_analyses (
   model_version TEXT NOT NULL DEFAULT 'gpt-4o-v1',
   response_time_ms INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  vector_embedding VECTOR(1536)
+  vector_embedding VECTOR(3072)
 );
 
 -- Model metrics table (for tracking improvement over time)
@@ -213,7 +213,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to find similar prompts by vector similarity
 CREATE OR REPLACE FUNCTION find_similar_prompts(
-  query_embedding VECTOR(1536),
+  query_embedding VECTOR(3072),
   match_threshold FLOAT DEFAULT 0.7,
   match_count INTEGER DEFAULT 10,
   filter_user_id UUID DEFAULT NULL

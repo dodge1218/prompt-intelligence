@@ -7,6 +7,38 @@
 
 ---
 
+## 🧠 Embedded AI Inside the Database
+
+Supabase's PostgreSQL with pgvector extension enables **native SQL + vector embeddings** in the same database, allowing you to:
+
+**Store vector embeddings using pgvector** and perform semantic search inside your SQL queries:
+
+```sql
+SELECT *
+FROM prompts
+ORDER BY embedding <#> '[user vector]' -- cosine distance
+LIMIT 10;
+```
+
+This is how you'll find **"similar prompts to this one"** or **"most symbolic prompts like this vector"**.
+
+### 🧰 Tools to Add AI to SQL Interface
+
+| Tool | What it does |
+|------|-------------|
+| 🧠 **Supabase + pgvector** | Store + semantically query prompt embeddings |
+| 🧠 **SQLMesh / dbt** | Build prompt dashboards and metrics |
+| 🧠 **Text-to-SQL (OpenAI or OSS)** | User types "find prompts with highest ICE" → AI writes query |
+| 🧠 **Retool / Vercel AI SDK** | Build custom PIE admin interface with prompt stats + visuals |
+
+This architecture enables:
+- **Semantic search** within SQL without external vector databases
+- **Hybrid queries** combining traditional filters with vector similarity
+- **Prompt discovery** through natural language queries converted to SQL
+- **Administrative dashboards** powered by vector-enhanced analytics
+
+---
+
 ## Overview
 
 This document outlines the complete backend vectorization infrastructure for Money GPT, enabling semantic search, similarity detection, novelty scoring, and advanced prompt discovery through PostgreSQL vector embeddings.
@@ -48,8 +80,8 @@ CREATE TABLE prompt_analyses (
   model_version TEXT DEFAULT 'gpt-4o-v1',
   response_time_ms INTEGER DEFAULT 0,
   
-  -- Vector Embedding (OpenAI text-embedding-3-small: 1536 dimensions)
-  vector_embedding VECTOR(1536),
+  -- Vector Embedding (OpenAI text-embedding-3-large: 3072 dimensions)
+  vector_embedding VECTOR(3072),
   
   -- Timestamps
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -77,17 +109,18 @@ CREATE TABLE prompt_analyses (
 
 ## Vector Embedding Strategy
 
-### Embedding Model: OpenAI `text-embedding-3-small`
+### Embedding Model: OpenAI `text-embedding-3-large`
 
 **Why this model?**
-- **Dimensions**: 1536 (standard for most semantic search)
-- **Cost**: $0.02 per 1M tokens (extremely cheap)
-- **Quality**: State-of-the-art semantic understanding
-- **Speed**: ~100ms per embedding
-- **Compatibility**: Works with pgvector out of the box
+- **Dimensions**: 3072 (maximum quality for semantic search)
+- **Cost**: $0.13 per 1M tokens (still very affordable)
+- **Quality**: Best-in-class semantic understanding and retrieval performance
+- **Speed**: ~100-150ms per embedding
+- **Compatibility**: Full pgvector support with extended dimensions
+- **Benefit**: Superior accuracy for detecting semantic similarity and novelty scoring
 
 **Alternative Models** (for future consideration):
-- `text-embedding-3-large` (3072 dims) - Higher quality, 2x cost
+- `text-embedding-3-small` (1536 dims) - Lower cost, slightly reduced quality
 - Voyage AI embeddings - Specialized for search
 - Open-source models (all-MiniLM-L6-v2) - Free but lower quality
 
@@ -104,13 +137,13 @@ async function generateEmbedding(prompt: string): Promise<number[]> {
     },
     body: JSON.stringify({
       input: prompt,
-      model: 'text-embedding-3-small',
+      model: 'text-embedding-3-large',
       encoding_format: 'float',
     }),
   })
   
   const data = await response.json()
-  return data.data[0].embedding // Returns float[]
+  return data.data[0].embedding // Returns float[] with 3072 dimensions
 }
 ```
 
@@ -148,7 +181,7 @@ SELECT *
 FROM prompt_analyses
 WHERE user_id = 'user-123'
   AND vector_embedding IS NOT NULL
-ORDER BY vector_embedding <=> '[query_embedding]'::VECTOR(1536)
+ORDER BY vector_embedding <=> '[query_embedding]'::VECTOR(3072)
 LIMIT 10;
 ```
 
@@ -198,11 +231,11 @@ LIMIT 10;
 SELECT 
   pa.id,
   pa.prompt,
-  1 - (pa.vector_embedding <=> '[new_prompt_embedding]'::VECTOR(1536)) AS similarity
+  1 - (pa.vector_embedding <=> '[new_prompt_embedding]'::VECTOR(3072)) AS similarity
 FROM prompt_analyses pa
 WHERE 
   pa.user_id = 'user-123'
-  AND pa.vector_embedding <=> '[new_prompt_embedding]'::VECTOR(1536) < 0.1
+  AND pa.vector_embedding <=> '[new_prompt_embedding]'::VECTOR(3072) < 0.1
 ORDER BY similarity DESC;
 ```
 
@@ -355,14 +388,14 @@ ORDER BY month ASC;
 SELECT 
   pa.id,
   pa.prompt,
-  1 - (pa.vector_embedding <=> '[query_embedding]'::VECTOR(1536)) AS similarity,
+  1 - (pa.vector_embedding <=> '[query_embedding]'::VECTOR(3072)) AS similarity,
   pa.ice_score
 FROM prompt_analyses pa
 WHERE 
   pa.user_id = 'user-123'
   AND pa.pie_tier = 3
   AND pa.pie_primary_category = 'strategic'
-  AND pa.vector_embedding <=> '[query_embedding]'::VECTOR(1536) < 0.5
+  AND pa.vector_embedding <=> '[query_embedding]'::VECTOR(3072) < 0.5
 ORDER BY similarity DESC
 LIMIT 10;
 ```
@@ -490,7 +523,7 @@ CREATE INDEX idx_created_at ON prompt_analyses (created_at DESC);
 ```json
 {
   "input": "Your prompt text here...",
-  "model": "text-embedding-3-small",
+  "model": "text-embedding-3-large",
   "encoding_format": "float"
 }
 ```
@@ -506,7 +539,7 @@ CREATE INDEX idx_created_at ON prompt_analyses (created_at DESC);
       "embedding": [0.123, -0.456, 0.789, ...]
     }
   ],
-  "model": "text-embedding-3-small",
+  "model": "text-embedding-3-large",
   "usage": {
     "prompt_tokens": 8,
     "total_tokens": 8
@@ -549,7 +582,7 @@ export async function generateEmbedding(prompt: string): Promise<number[]> {
     },
     body: JSON.stringify({
       input: prompt,
-      model: 'text-embedding-3-small',
+      model: 'text-embedding-3-large',
       encoding_format: 'float',
     }),
   })
@@ -656,7 +689,7 @@ export async function getPromptsByClassification(
 describe('Vectorization', () => {
   it('generates embeddings with correct dimensions', async () => {
     const embedding = await generateEmbedding('Test prompt')
-    expect(embedding.length).toBe(1536)
+    expect(embedding.length).toBe(3072)
   })
 
   it('detects near-duplicates correctly', async () => {
@@ -703,25 +736,25 @@ describe('Vector Search Integration', () => {
 
 ### Embedding Generation Costs
 
-| Users | Prompts/User | Total Prompts | Tokens (avg 50) | Cost @ $0.02/1M |
+| Users | Prompts/User | Total Prompts | Tokens (avg 50) | Cost @ $0.13/1M |
 |-------|--------------|---------------|-----------------|-----------------|
-| 100 | 100 | 10K | 500K | $0.01 |
-| 1K | 500 | 500K | 25M | $0.50 |
-| 10K | 1000 | 10M | 500M | $10.00 |
-| 100K | 1000 | 100M | 5B | $100.00 |
+| 100 | 100 | 10K | 500K | $0.065 |
+| 1K | 500 | 500K | 25M | $3.25 |
+| 10K | 1000 | 10M | 500M | $65.00 |
+| 100K | 1000 | 100M | 5B | $650.00 |
 
-**Conclusion**: Embedding costs are negligible compared to LLM analysis costs (~$0.01 per analysis)
+**Conclusion**: Embedding costs are still low compared to LLM analysis costs (~$0.01 per analysis), providing superior quality for minimal incremental cost
 
 ### Storage Costs
 
-| Prompts | Vector Size (1536 × 4 bytes) | Total Storage | Supabase Cost |
+| Prompts | Vector Size (3072 × 4 bytes) | Total Storage | Supabase Cost |
 |---------|------------------------------|---------------|---------------|
-| 10K | 6KB | 60MB | Free |
-| 100K | 6KB | 600MB | Free |
-| 1M | 6KB | 6GB | ~$0.25/month |
-| 10M | 6KB | 60GB | ~$2.50/month |
+| 10K | 12KB | 120MB | Free |
+| 100K | 12KB | 1.2GB | Free |
+| 1M | 12KB | 12GB | ~$0.50/month |
+| 10M | 12KB | 120GB | ~$5.00/month |
 
-**Conclusion**: Storage costs are minimal on Supabase's generous free tier
+**Conclusion**: Storage costs remain minimal on Supabase, with double the embedding quality for marginal storage increase
 
 ---
 
