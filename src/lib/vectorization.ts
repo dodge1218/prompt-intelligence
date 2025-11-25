@@ -52,7 +52,7 @@ export async function generateEmbedding(prompt: string): Promise<number[]> {
       },
       body: JSON.stringify({
         input: prompt,
-        model: 'text-embedding-3-small',
+        model: 'text-embedding-3-large',
         encoding_format: 'float',
       }),
     })

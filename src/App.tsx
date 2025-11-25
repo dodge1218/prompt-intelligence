@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { Brain, ClockCounterClockwise, Sparkle, Lightning, DownloadSimple, FileArrowDown, CurrencyDollar, Database } from '@phosphor-icons/react'
+import { Brain, ClockCounterClockwise, Sparkle, Lightning, DownloadSimple, FileArrowDown, CurrencyDollar, Database, MagnifyingGlass } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { analyzePrompt, getTierColor, TIER_DESCRIPTIONS } from '@/lib/scoring'
 import type { PromptAnalysis } from '@/lib/types'
@@ -18,7 +18,11 @@ import { exportToJSON, exportToCSV, exportSingleAnalysisToJSON, exportSingleAnal
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { PaymentGate } from '@/components/PaymentGate'
 import { LockedContent } from '@/components/LockedContent'
+import { SimilarPrompts } from '@/components/SimilarPrompts'
+import { DiscoverPrompts } from '@/components/DiscoverPrompts'
+import { DuplicateWarning } from '@/components/DuplicateWarning'
 import { saveAnalysisToDatabase, getAnalysesFromDatabase, checkUserHasCredits, decrementUserCredits } from '@/lib/database'
+import { detectDuplicate } from '@/lib/vectorization'
 import { isDevelopmentMode, devBypassPayment } from '@/lib/supabase'
 
 function App() {
@@ -30,10 +34,22 @@ function App() {
   const [hasAccess, setHasAccess] = useState(false)
   const [analysisLocked, setAnalysisLocked] = useState(true)
   const [isLoadingFromDB, setIsLoadingFromDB] = useState(false)
+  const [duplicateDetected, setDuplicateDetected] = useState<{
+    isDuplicate: boolean
+    similarPrompt?: any
+    similarity?: number
+  } | null>(null)
+  const [userId, setUserId] = useState<string>('')
 
   useEffect(() => {
     loadHistoryFromDatabase()
+    loadUserId()
   }, [])
+
+  const loadUserId = async () => {
+    const user = await spark.user()
+    setUserId(user.id)
+  }
 
   const loadHistoryFromDatabase = async () => {
     setIsLoadingFromDB(true)
@@ -61,12 +77,25 @@ function App() {
     return hasCredits
   }
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = async (bypassDuplicateCheck = false) => {
     if (!promptInput.trim()) {
       toast.error('Please enter a prompt to analyze')
       return
     }
 
+    if (!bypassDuplicateCheck && userId) {
+      try {
+        const duplicateCheck = await detectDuplicate(promptInput, userId, 0.85)
+        if (duplicateCheck.isDuplicate) {
+          setDuplicateDetected(duplicateCheck)
+          return
+        }
+      } catch (error) {
+        console.warn('Duplicate detection failed, continuing anyway:', error)
+      }
+    }
+
+    setDuplicateDetected(null)
     setIsAnalyzing(true)
     try {
       const analysis = await analyzePrompt(promptInput)
@@ -170,10 +199,14 @@ function App() {
         </header>
 
         <Tabs defaultValue="analyze" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsList className="grid w-full grid-cols-3 max-w-2xl">
             <TabsTrigger value="analyze" className="gap-2">
               <Brain className="w-4 h-4" />
               Analyze
+            </TabsTrigger>
+            <TabsTrigger value="discover" className="gap-2">
+              <MagnifyingGlass className="w-4 h-4" />
+              Discover
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
               <Database className="w-4 h-4" />
@@ -201,7 +234,7 @@ function App() {
                   <span className="text-xs text-muted-foreground">
                     {promptInput.length} characters (~{Math.ceil(promptInput.length / 4)} tokens)
                   </span>
-                  <Button onClick={handleAnalyze} disabled={isAnalyzing || !promptInput.trim()}>
+                  <Button onClick={() => handleAnalyze(false)} disabled={isAnalyzing || !promptInput.trim()}>
                     {isAnalyzing ? (
                       <>Analyzing...</>
                     ) : (
@@ -212,6 +245,20 @@ function App() {
                     )}
                   </Button>
                 </div>
+
+                {duplicateDetected && duplicateDetected.isDuplicate && (
+                  <DuplicateWarning
+                    similarPrompt={duplicateDetected.similarPrompt}
+                    similarity={duplicateDetected.similarity!}
+                    onViewExisting={() => {
+                      const fullAnalysis = history?.find(h => h.id === duplicateDetected.similarPrompt.id)
+                      if (fullAnalysis) {
+                        loadFromHistory(fullAnalysis)
+                      }
+                    }}
+                    onContinueAnyway={() => handleAnalyze(true)}
+                  />
+                )}
               </CardContent>
             </Card>
 
@@ -345,6 +392,32 @@ function App() {
                 </LockedContent>
               </>
             )}
+          </TabsContent>
+
+          <TabsContent value="discover" className="space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              <DiscoverPrompts
+                userId={userId}
+                onSelectPrompt={(prompt) => {
+                  setPromptInput(prompt.prompt)
+                  const analysis = history?.find(h => h.id === prompt.id)
+                  if (analysis) {
+                    setCurrentAnalysis(analysis)
+                    setAnalysisLocked(false)
+                  }
+                }}
+              />
+              <SimilarPrompts
+                promptText={promptInput}
+                userId={userId}
+                onSelectPrompt={(prompt) => {
+                  const analysis = history?.find(h => h.id === prompt.id)
+                  if (analysis) {
+                    loadFromHistory(analysis)
+                  }
+                }}
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">

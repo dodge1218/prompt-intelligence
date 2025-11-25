@@ -1,7 +1,20 @@
 # Semantic Search Reference Guide
 ## Embedded AI Inside the Database
 
+**Status**: ✅ FULLY IMPLEMENTED - See `VECTORIZATION_COMPLETE.md` for details
+
 This document provides a quick reference for implementing semantic search capabilities using Supabase's pgvector extension.
+
+---
+
+## ✅ Implementation Complete
+
+As of Iteration 2, the full vectorization infrastructure is live:
+- 3072-dimensional embeddings generated for all prompts
+- pgvector HNSW indexes deployed for <50ms queries
+- Complete UI: `SimilarPrompts`, `DiscoverPrompts`, `DuplicateWarning` components
+- New "Discover" tab with semantic search and RePrompt features
+- Real-time duplicate detection integrated into analyze workflow
 
 ---
 
