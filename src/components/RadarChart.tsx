@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
 import * as d3 from 'd3'
 import type { ICEScore } from '@/lib/types'
 
@@ -8,7 +8,7 @@ interface RadarChartProps {
 }
 
 export function RadarChart({ score, size = 200 }: RadarChartProps) {
-  const svgRef = useRef<SVGSVGElement>(null)
+  const svgRef = useRef<SVGSVGElement | null>(null)
 
   useEffect(() => {
     if (!svgRef.current) return
