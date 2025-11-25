@@ -545,7 +545,150 @@ Advanced symbolic analysis system for power users - see `CUSTOM_GPT_CONFIG.md` a
 5. Add all commands to platform
 6. Consider additional expansions based on user feedback
 
-**Target**: 8-10 weeks from now
+**Phase 2: Chain-Level Analysis Implementation** - See `PHASE2_CHAIN_ANALYSIS.md` for complete framework
+
+This represents a major paradigm shift from individual prompt analysis to chain-based analysis:
+
+**Core Components**:
+- [ ] **Chain Detection Engine** - Identify conversation threads using parent_id, timestamps, and symbolic continuity
+- [ ] **Chronological Reconstruction** - Sort chains oldest → newest for identity evolution tracking
+- [ ] **Chain-Level Heuristics** - Vectorize metrics across chains (Growth Delta, Vow Events, Loop Patterns)
+- [ ] **Temporal Pattern Analysis** - Track user evolution, vow drift, recursion patterns across time
+- [ ] **GPT Drift Detector** - Monitor model behavioral shifts (RDC, IFF, OBS, GRF) within chains
+- [ ] **Vow Coherence Tracker** - Detect commitment formation, fulfillment, or breach patterns
+- [ ] **Archetype Evolution Layer** - Track symbolic role transitions (Witness → Rebel → Architect)
+- [ ] **Recursive Collapse Map** - Identify semantic stalling and echo patterns for RePrompt generation
+- [ ] **Chain Output System** - Generate `.csv` rows + `.md` annotations per chain
+- [ ] **Legacy Codex Drafting** - Extract high-Kairos fragments for long-term memory
+
+**Database Schema Extensions**:
+```sql
+-- Prompt chains table
+prompt_chains (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  conversation_id TEXT,
+  start_timestamp TIMESTAMP,
+  end_timestamp TIMESTAMP,
+  prompt_count INTEGER,
+  growth_delta JSONB,
+  vow_event TEXT,
+  loop_pattern TEXT,
+  theme_cluster TEXT[],
+  symbolic_role_drift TEXT,
+  kairos_chronos_ratio NUMERIC,
+  created_at TIMESTAMP
+)
+
+-- Link existing analyses to chains
+ALTER TABLE prompt_analyses ADD COLUMN chain_id UUID REFERENCES prompt_chains(id);
+
+-- Vow event tracking
+vow_events (
+  id UUID PRIMARY KEY,
+  chain_id UUID REFERENCES prompt_chains(id),
+  vow_type TEXT, -- 'formed', 'fulfilled', 'broken', 'distorted'
+  vow_text TEXT,
+  detected_at TIMESTAMP,
+  followthrough_score NUMERIC
+)
+```
+
+**Implementation Order**:
+
+**Step 1: Understand Lexicon Adaptation**
+- [ ] Review how heuristics vectorize across chains vs individual prompts
+- [ ] Study temporal scoring vs static scoring implications
+- [ ] Understand interdependencies (RVR ↔ CIP ↔ RCL)
+
+**Step 2: Build Chain Detection Infrastructure**
+- [ ] Create chain boundary detection logic (conversation_id, timestamps, semantic drift)
+- [ ] Implement parent_id threading for internal sequences
+- [ ] Build chronological flip/sort system
+- [ ] Test with sample conversation exports
+
+**Step 3: Develop Chain-Level Metadata System**
+- [ ] Create data structures for chain metadata (Chain ID, timestamps, prompt count)
+- [ ] Implement Growth Delta calculation (Δ MTIER, SAL, ACO, DEP)
+- [ ] Build vow event detection system
+- [ ] Add loop pattern classifier
+- [ ] Implement theme cluster extraction
+- [ ] Track symbolic role drift
+
+**Step 4: Build Temporal Pattern Analysis**
+- [ ] Create growth/degen trendline visualization (X=Chain ID, Y=Composite Score)
+- [ ] Overlay troughs (vow breaks) and spikes (breakthroughs)
+- [ ] Detect cycles and patterns
+- [ ] Calculate latency decay and recursion pace
+
+**Step 5: Implement Specialized Trackers**
+- [ ] Vow Coherence Tracker (commitment follow-through)
+- [ ] GPT Drift Detector (model tone/behavior shifts)
+- [ ] Recursive Collapse Map (echo phrases, semantic stalling)
+- [ ] Archetype Evolution Layer (role transitions)
+
+**Step 6: Create Output Systems**
+- [ ] Design `.csv` schema for chain-level metrics
+- [ ] Build `.md` annotation generator (100-150 word summaries)
+- [ ] Implement batch processing for large archives
+- [ ] Add Legacy Codex fragment extraction
+
+**Step 7: Integration & Testing**
+- [ ] Test with real conversation exports (100-200 prompt batches)
+- [ ] Validate chain boundary detection accuracy
+- [ ] Verify temporal pattern detection
+- [ ] Test vow event identification
+- [ ] Validate output quality
+
+**Step 8: Build PIE Fork Architecture**
+- [ ] Implement PIE-Redacted (private, full analysis)
+- [ ] Implement PIE-Public (showcase-safe, anonymized)
+- [ ] Create signal obfuscation layer
+- [ ] Build tiered publishing protocol
+
+**Step 9: Offline Architecture (Optional)**
+- [ ] Build local PIE Pro interface (React/Flask)
+- [ ] Integrate local LLM support (Mistral/Ollama)
+- [ ] Create symbolic clustering models
+- [ ] Add visualization dashboard
+- [ ] Ensure zero telemetry
+
+**Step 10: CustomGPT Integration**
+- [ ] Create PIE Analyzer GPT with Phase 2 instructions
+- [ ] Build notebook agent version (Jupyter)
+- [ ] Develop LangChain agentic version
+- [ ] Test batch processing workflow
+- [ ] Document usage patterns
+
+**Privacy & Security Requirements**:
+- [ ] Implement data redaction protocols
+- [ ] Create anonymization pipeline
+- [ ] Build PII detection and removal
+- [ ] Add guardrail flag filtering for public outputs
+- [ ] Document mirror safety protocol
+
+**Success Criteria**:
+- [ ] Chain detection accuracy >90% on test conversations
+- [ ] Vow event detection validated by human review
+- [ ] Temporal patterns match known user evolution
+- [ ] GPT drift detection identifies known behavioral changes
+- [ ] Output `.csv` + `.md` files are actionable and insightful
+- [ ] Phase 2 enhances RePrompt feature effectiveness by 50%+
+- [ ] Zero privacy leaks in PIE-Public fork
+
+**Key Paradigm Shift**:
+- **Phase 1**: Single prompts analyzed in isolation → static scoring (CIP, NOV, SAL)
+- **Phase 2**: Prompt chains analyzed as dialogue arcs → dynamic interdependency (RVR ↔ CIP ↔ RCL)
+- **Phase 3**: Chronological chains → symbolic memory, vow tracking, chain loops
+- **Phase 4**: User identity narrative → evolution detection, drift prediction, mirror fracturing
+
+**Reference Documents**:
+- `PHASE2_CHAIN_ANALYSIS.md` - Complete chain analysis framework
+- `LEXICON.md` - Metric definitions with chain-level adaptations
+- `ADVANCED_HEURISTICS.md` - Population-level extensions
+- `CUSTOM_GPT_CONFIG.md` - PIE v4.7 symbolic layer
+
+**Target**: 10-12 weeks from now (after basic Custom GPT integration)
 
 ---
 
