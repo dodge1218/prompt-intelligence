@@ -257,11 +257,213 @@
 
 ---
 
-### 7. Advanced Features
+### 7. Bulk Prompt Data Collection & Model Training (Post-MVP)
+**Status**: 🔴 NOT STARTED - FUTURE ENHANCEMENT  
+**Estimated Time**: 6-8 weeks (full implementation)  
+**Prerequisites**: MVP stable, 10K+ user analyses, proven PMF
+
+**IMPORTANT**: This is a Stage 4 feature (see PRD Feature Completion Stages). Do NOT start this until:
+- [ ] MVP is launched and stable (Stage 1 complete)
+- [ ] User testing completed successfully (Stage 2 complete)
+- [ ] Advanced features deployed (Stage 3 complete)
+- [ ] API costs are significant enough to justify optimization
+- [ ] Product-market fit is proven
+
+**Goal**: Reduce API costs by 70%+ by training internal ML models using bulk prompt data
+
+**Phase 1: Data Collection Infrastructure (2 weeks)**
+1. **Set up data collection pipelines**:
+   ```bash
+   # Create new project structure
+   mkdir -p data-pipeline/{scrapers,cleaners,labelers}
+   ```
+
+2. **Build web scrapers for prompt sources**:
+   - GitHub repos: awesome-chatgpt-prompts, prompt-engineering-guide
+   - PromptBase API (if available)
+   - Reddit: r/ChatGPT, r/PromptDesign
+   - HuggingFace datasets: https://huggingface.co/datasets?search=prompt
+   - Academic papers (arXiv) with prompt examples
+
+3. **Create scraper modules** (`data-pipeline/scrapers/`):
+   ```typescript
+   // github-scraper.ts - scrape GitHub prompt repos
+   // reddit-scraper.ts - use Reddit API
+   // huggingface-scraper.ts - download HF datasets
+   // web-scraper.ts - general purpose Playwright scraper
+   ```
+
+4. **Implement rate limiting and politeness**:
+   - Respect robots.txt
+   - Add delays between requests
+   - Use rotating user agents
+   - Cache responses to avoid re-scraping
+
+5. **Set up dedicated Supabase table**:
+   ```sql
+   CREATE TABLE training_prompts (
+     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+     prompt_text text NOT NULL,
+     source text, -- 'github', 'reddit', 'user_submitted', etc.
+     source_url text,
+     scraped_at timestamp DEFAULT now(),
+     labeled boolean DEFAULT false,
+     ice_idea integer,
+     ice_cost integer,
+     ice_exploitability integer,
+     ice_overall integer,
+     pie_tier integer,
+     pie_category text,
+     labeling_model text, -- 'gpt-4o', 'gemini-1.5-pro', etc.
+     labeling_confidence numeric,
+     quality_score numeric,
+     is_training_set boolean DEFAULT false,
+     is_validation_set boolean DEFAULT false
+   );
+   
+   CREATE INDEX idx_training_labeled ON training_prompts(labeled, is_training_set);
+   ```
+
+**Phase 2: Data Cleaning & Labeling (2 weeks)**
+1. **Clean scraped data**:
+   - Remove duplicates (fuzzy matching)
+   - Filter out low-quality prompts
+   - Normalize formatting
+   - Remove PII/sensitive content
+
+2. **Label prompts using current LLM system**:
+   - Run each prompt through existing analyzePrompt()
+   - Store ICE/PIE scores as labels
+   - Use multiple models for consensus (GPT-4o + Gemini)
+   - Calculate confidence scores
+
+3. **Create labeling job script** (`scripts/label-training-data.ts`):
+   ```typescript
+   // Process prompts in batches
+   // Use cheaper models (Gemini Flash) for labeling
+   // Store results back to training_prompts table
+   // Track labeling costs
+   ```
+
+4. **Quality control**:
+   - Manual review sample of 500 prompts
+   - Validate label consistency
+   - Remove outliers and errors
+   - Aim for 50K+ high-quality labeled prompts
+
+**Phase 3: Model Training Setup (2 weeks)**
+1. **Choose model architecture**:
+   - Option A: Fine-tune Llama 3 8B with LoRA
+   - Option B: Fine-tune Mistral 7B with QLoRA
+   - Option C: Train custom BERT-based classifier
+   - Recommendation: Start with Option B (best cost/performance)
+
+2. **Set up training environment**:
+   - Use Runpod/Vast.ai/Lambda Labs (cheap GPU rental)
+   - Or Google Colab Pro+ for prototyping
+   - Install: transformers, peft, bitsandbytes, accelerate
+
+3. **Create training notebooks**:
+   - `notebooks/ice-scorer-training.ipynb` - Train ICE scoring model
+   - `notebooks/pie-classifier-training.ipynb` - Train PIE classification model
+
+4. **Split data**:
+   - 80% training (40K prompts)
+   - 10% validation (5K prompts)
+   - 10% test set (5K prompts)
+
+**Phase 4: Model Training & Validation (1 week)**
+1. **Train ICE scorer**:
+   - Regression model predicting ICE scores (0-100)
+   - Loss function: MSE or Huber loss
+   - Target: R² > 0.85 vs LLM scores
+
+2. **Train PIE classifier**:
+   - Multi-class classification (9 categories)
+   - Loss function: CrossEntropy
+   - Target: F1-score > 0.90 vs LLM classifications
+
+3. **Hyperparameter tuning**:
+   - Learning rate: [1e-5, 5e-5, 1e-4]
+   - Batch size: [8, 16, 32]
+   - LoRA rank: [8, 16, 32]
+   - LoRA alpha: [16, 32, 64]
+
+4. **Validate against test set**:
+   - Compare custom model vs LLM outputs
+   - Calculate agreement rate (target: 90%+)
+   - Identify failure modes
+
+**Phase 5: Model Deployment (1 week)**
+1. **Optimize model for inference**:
+   - Quantize to INT8 or INT4
+   - Use ONNX Runtime for 2-3x speedup
+   - Or deploy with Ollama for easy serving
+
+2. **Create model inference service**:
+   - Separate service/container for model inference
+   - API endpoint: POST /analyze-local
+   - Load model once at startup
+   - Batch inference for efficiency
+
+3. **A/B test implementation**:
+   - 10% of traffic → custom model
+   - 90% of traffic → LLM API (baseline)
+   - Compare: accuracy, speed, user satisfaction
+   - Gradually increase custom model percentage
+
+4. **Fallback logic**:
+   - If custom model confidence < threshold → use LLM API
+   - Monitor error rates
+   - Auto-rollback if quality degrades
+
+**Phase 6: Monitoring & Iteration (Ongoing)**
+1. **Track metrics**:
+   - API cost savings
+   - Response time improvements
+   - Model accuracy vs LLM
+   - User satisfaction (implicit feedback)
+
+2. **Continuous improvement**:
+   - Collect new user analyses as training data
+   - Retrain model monthly with fresh data
+   - Fine-tune on failure cases
+   - Version control models
+
+3. **Cost analysis**:
+   - Calculate ROI: training cost vs API savings
+   - Track GPU costs for inference
+   - Monitor total cost per analysis
+
+**Deliverables**:
+- [ ] 50K+ labeled training prompts
+- [ ] Trained ICE scoring model (90%+ agreement with LLM)
+- [ ] Trained PIE classification model (90%+ agreement)
+- [ ] Model inference service deployed
+- [ ] A/B testing framework implemented
+- [ ] Monitoring dashboard for model performance
+- [ ] Documentation for model updates/retraining
+
+**Expected Outcomes**:
+- 70-80% reduction in API costs
+- 50%+ faster response times (local inference)
+- Maintain or improve analysis quality
+- Enable offline/on-premise deployments (enterprise feature)
+
+**Resources Needed**:
+- GPU time: ~$200-500 for training
+- Engineering time: ~6-8 weeks (1 ML engineer)
+- Storage: 50GB+ for training data and models
+
+**See PRD Section "Feature Completion Stages - Stage 4" for full strategic context**
+
+---
+
+### 8. Advanced Features
 **Status**: 🔴 NOT STARTED  
 **Estimated Time**: Various
 
-**Potential Features**:
+**Potential Features** (Stage 3 - After User Testing):
 - [ ] Batch prompt analysis (upload CSV)
 - [ ] API access for Pro/Enterprise users
 - [ ] Team collaboration features
@@ -272,29 +474,61 @@
 - [ ] Analytics dashboard
 - [ ] Email reports
 
+**Note**: Do NOT implement these until Stage 2 (User Testing) is complete and validated!
+
 ---
 
 ## 🟢 LOW PRIORITY - Nice to Have
 
-### 8. Testing & Quality
+### 9. Testing & Quality
 - [ ] Write unit tests for database functions
 - [ ] Write integration tests for payment flow
 - [ ] Add E2E tests with Playwright
 - [ ] Set up error monitoring (Sentry)
 - [ ] Add performance monitoring
 
-### 9. Documentation
+### 10. Documentation
 - [ ] Create user guide
 - [ ] Add API documentation
 - [ ] Write developer onboarding guide
 - [ ] Create video tutorials
 
-### 10. Marketing & Legal
+### 11. Marketing & Legal
 - [ ] Write Terms of Service
 - [ ] Write Privacy Policy
 - [ ] Add cookie consent banner
 - [ ] Create landing page
 - [ ] Set up analytics (Google Analytics / Plausible)
+
+---
+
+## Feature Stage Roadmap Summary
+
+Based on PRD Feature Completion Stages:
+
+### Stage 1: MVP Launch (CURRENT)
+- Target: 2-3 weeks
+- Focus: Core features, payment, database
+- Status: 🟡 IN PROGRESS
+
+### Stage 2: User Testing (NEXT)
+- Target: 4-5 weeks from now
+- Focus: UI/UX validation with 10-15 real users
+- Status: 🔴 NOT STARTED
+- **BLOCKER**: Must complete and validate before Stage 3
+
+### Stage 3: Advanced Features
+- Target: 8-10 weeks from now
+- Focus: Scaling, API access, team features
+- Status: 🔴 NOT STARTED
+
+### Stage 4: Model Training & Cost Optimization
+- Target: 3-6 months after Stage 3
+- Focus: Custom ML models, bulk data collection
+- Status: 🔴 NOT PLANNED YET
+- Prerequisites: PMF proven, 10K+ analyses, significant API costs
+
+**KEY PRINCIPLE**: Do NOT skip stages. User testing (Stage 2) is mandatory before advanced features. Model training (Stage 4) only makes sense after proven success.
 
 ---
 
@@ -357,10 +591,28 @@ If you encounter issues:
 
 ## Estimated Total Time to Launch
 
+### Stage 1 (MVP):
 - Critical items: ~7 hours
 - Medium priority: ~11 hours
 - **Total for MVP**: ~18 hours of development time
 
+### Stage 2 (User Testing):
+- Test preparation: ~4 hours
+- User testing execution: ~2 weeks (recruiting, sessions, analysis)
+- Iteration based on feedback: ~1-2 weeks
+- **Total**: ~3-4 weeks elapsed time
+
+### Stage 3 (Advanced Features):
+- Varies based on features selected
+- **Estimate**: ~40-60 hours development
+
+### Stage 4 (Model Training - Future):
+- Data collection & training infrastructure: ~6-8 weeks
+- Requires ML engineering expertise
+- Only pursue if ROI justifies cost
+
 ---
 
-**Last Updated**: January 2025
+**Last Updated**: January 2025  
+**Current Focus**: Stage 1 (MVP Core Features)  
+**Next Milestone**: Complete MVP → User Testing (Stage 2 - DO NOT SKIP!)

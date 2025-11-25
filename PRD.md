@@ -54,6 +54,13 @@ A sophisticated, monetized prompt analysis and scoring platform that uses ICE + 
 - **Progression**: Analysis data accumulated → Patterns identified → Model parameters updated → New analyses use improved algorithms → Cycle repeats
 - **Success criteria**: Demonstrable improvement in scoring consistency and classification accuracy over time
 
+### Bulk Data Collection & Model Training (Post-MVP)
+- **Functionality**: Scrape/source large datasets of high-quality prompts from online sources (GitHub, prompt libraries, academic papers) to train internal scoring models
+- **Purpose**: Reduce dependency on expensive LLM APIs by training custom lightweight models for ICE/PIE scoring after sufficient data is collected
+- **Trigger**: After reaching MVP + additional features milestone (near completion), when user base is stable
+- **Progression**: Identify data sources → Build scraping pipelines → Clean and label data → Train custom models (fine-tuned Llama/Mistral or custom transformers) → A/B test against LLM scoring → Gradually replace expensive API calls with internal models
+- **Success criteria**: Custom model achieves 90%+ agreement with LLM scoring; API costs reduced by 70%+; response time improved by 50%+
+
 ## Edge Case Handling
 - **Payment failures** - Graceful retry with clear error messages; store partial analysis state to resume
 - **Database connection loss** - Queue operations locally; sync when connection restored; show connectivity status
@@ -380,8 +387,13 @@ Subtle, premium animations that communicate quality and polish - nothing aggress
 
 ---
 
-## Launch Checklist
+## Feature Completion Stages
 
+### Stage 1: MVP Launch (Core Features)
+**Goal**: Launch functional product with payment gates and basic analysis
+**Status**: 🟡 IN PROGRESS
+
+**Required Features**:
 - [ ] Supabase schema created and RLS policies set
 - [ ] Vercel project created with all environment variables
 - [ ] Payment provider integrated and tested
@@ -393,8 +405,148 @@ Subtle, premium animations that communicate quality and polish - nothing aggress
 - [ ] Development mode properly configured
 - [ ] Pricing page implemented
 - [ ] Terms of service and privacy policy added
-- [ ] Error handling and edge cases covered
-- [ ] Mobile responsive design tested
-- [ ] Performance testing (1000+ analyses)
+
+**Target**: 2-3 weeks from now
+
+---
+
+### Stage 2: Partial Completion - User Test Needed
+**Goal**: UI/UX validation before adding advanced features
+**Status**: 🔴 NOT STARTED
+
+**Completion Criteria Before Test**:
+- [ ] All Stage 1 features deployed and stable
+- [ ] 50+ real user analyses collected
+- [ ] Zero critical bugs in core flow
+- [ ] Mobile responsive fully functional
+- [ ] Payment flow tested with real transactions
+
+**User Test Focus Areas**:
+1. **Payment Flow UX**
+   - Is the payment gate experience smooth or frustrating?
+   - Do users understand the value proposition before paying?
+   - Are pricing tiers clear and compelling?
+
+2. **Analysis Interface**
+   - Is the ICE/PIE visualization intuitive?
+   - Do users understand what the scores mean?
+   - Are suggestions actionable and valuable?
+
+3. **Navigation & Information Architecture**
+   - Can users easily find past analyses?
+   - Is the tab structure logical?
+   - Are export options discoverable?
+
+4. **Mobile Experience**
+   - Does the payment flow work well on mobile?
+   - Is text readable without zooming?
+   - Are buttons and inputs easy to tap?
+
+5. **Value Perception**
+   - Do users feel the analysis is worth the price?
+   - What additional features would increase value?
+   - Are there friction points causing drop-off?
+
+**Test Methodology**:
+- Recruit 10-15 target users (prompt engineers, AI enthusiasts, developers)
+- Provide test credits (free analyses) via dev mode
+- Record sessions (with consent) using tools like Hotjar or FullStory
+- Conduct 5 moderated sessions with think-aloud protocol
+- Survey all participants post-test (satisfaction, value, improvements)
+
+**Success Criteria for Proceeding**:
+- [ ] 70%+ user satisfaction score
+- [ ] Payment completion rate >60% (of those who start checkout)
+- [ ] <3 major UX issues identified
+- [ ] Users can complete core task (analyze → view results) in <2 minutes
+- [ ] Mobile usability score >75%
+
+**Iteration Plan**:
+- Fix all critical UX issues identified
+- Refine pricing/value proposition if needed
+- Improve unclear UI elements
+- Optimize mobile experience pain points
+- **Do NOT proceed to Stage 3 until these criteria are met**
+
+**Target**: 4-5 weeks from now
+
+---
+
+### Stage 3: Advanced Features & Scaling
+**Goal**: Add power features and prepare for scale
+**Status**: 🔴 NOT STARTED
+
+**Features to Add**:
+- [ ] Batch analysis (CSV upload)
+- [ ] API access for Pro/Enterprise users
+- [ ] Team collaboration features
+- [ ] Advanced analytics dashboard
+- [ ] Prompt templates library
+- [ ] Email reports and notifications
+- [ ] Performance testing (10K+ analyses)
 - [ ] Security audit completed
-- [ ] Marketing copy and value proposition finalized
+- [ ] Error monitoring and alerting (Sentry)
+
+**Target**: 8-10 weeks from now
+
+---
+
+### Stage 4: Model Training & Cost Optimization (Post-MVP Near Completion)
+**Goal**: Reduce API costs by training internal models
+**Status**: 🔴 NOT PLANNED YET
+
+**Bulk Data Collection Strategy**:
+1. **Data Sources to Scrape/Collect**:
+   - GitHub prompt repositories (awesome-prompts, etc.)
+   - Prompt marketplaces (PromptBase, PromptHero)
+   - Academic papers with prompt examples
+   - Reddit communities (r/ChatGPT, r/LocalLLaMA)
+   - User-submitted prompts from our platform (with consent)
+   - Public AI datasets (HuggingFace prompt datasets)
+
+2. **Data Collection Pipeline**:
+   - Build scrapers using Playwright/Puppeteer for dynamic content
+   - Respect robots.txt and rate limits
+   - Clean and deduplicate data
+   - Label prompts with ICE/PIE scores using current LLM system
+   - Store in dedicated training database (separate from production)
+   - Target: 50K-100K+ labeled prompts
+
+3. **Model Training Approach**:
+   - Fine-tune open-source models (Llama 3, Mistral, Gemma)
+   - Train specialized models: ICE scorer + PIE classifier
+   - Use LoRA/QLoRA for efficient training
+   - Validate against LLM outputs (aim for 90%+ agreement)
+   - Deploy using Ollama or TensorRT for fast inference
+
+4. **Cost Reduction Goals**:
+   - Replace 80%+ of LLM API calls with internal models
+   - Reduce per-analysis cost from ~$0.01 to ~$0.001
+   - Maintain or improve scoring quality
+   - Achieve <500ms analysis time
+
+**Prerequisites Before Starting**:
+- [ ] Stage 3 complete and stable
+- [ ] 10K+ user analyses in database
+- [ ] Proven product-market fit
+- [ ] Revenue exceeding API costs by 3x
+- [ ] Engineering resources for ML pipeline
+
+**Estimated Timeline**: 3-6 months after Stage 3 completion
+
+**Success Criteria**:
+- [ ] 50K+ training prompts collected and labeled
+- [ ] Custom model achieves 90%+ agreement with LLM scoring
+- [ ] API costs reduced by 70%+
+- [ ] Response time improved by 50%+
+- [ ] No regression in user satisfaction scores
+
+---
+
+## Current Stage Summary
+
+**We are currently in Stage 1** - building MVP core features. 
+
+**Next immediate milestone**: Complete Stage 1, then conduct structured user testing (Stage 2) before adding advanced features. Do NOT skip user testing - it's critical for product-market fit.
+
+**Model training and bulk data collection (Stage 4) is a future optimization** - only pursue after product is proven successful and API costs become significant.
