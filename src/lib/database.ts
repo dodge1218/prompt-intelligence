@@ -181,3 +181,43 @@ export async function initializeUserProfile(email: string): Promise<void> {
     console.error('Failed to initialize user profile:', error)
   }
 }
+
+export async function deleteAllAnalyses(): Promise<number> {
+  const user = await supabase.auth.getUser()
+  
+  if (!user.data.user) {
+    throw new Error('User not authenticated')
+  }
+
+  const { data, error } = await supabase
+    .from('prompt_analyses')
+    .delete()
+    .eq('user_id', user.data.user.id)
+    .select()
+
+  if (error) {
+    console.error('Failed to delete analyses:', error)
+    throw new Error('Failed to delete history')
+  }
+
+  return data?.length || 0
+}
+
+export async function deleteAnalysisById(analysisId: string): Promise<void> {
+  const user = await supabase.auth.getUser()
+  
+  if (!user.data.user) {
+    throw new Error('User not authenticated')
+  }
+
+  const { error } = await supabase
+    .from('prompt_analyses')
+    .delete()
+    .eq('id', analysisId)
+    .eq('user_id', user.data.user.id)
+
+  if (error) {
+    console.error('Failed to delete analysis:', error)
+    throw new Error('Failed to delete analysis')
+  }
+}

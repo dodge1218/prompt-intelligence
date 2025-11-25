@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useKV } from '@github/spark/hooks'
+import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
@@ -10,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { Brain, ClockCounterClockwise, Sparkle, Lightning, DownloadSimple, FileArrowDown, CurrencyDollar, Database, MagnifyingGlass, Copy, Check } from '@phosphor-icons/react'
+import { Brain, ClockCounterClockwise, Sparkle, Lightning, DownloadSimple, FileArrowDown, CurrencyDollar, Database, MagnifyingGlass, Copy, Check, Trash } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { analyzePrompt, getTierColor, TIER_DESCRIPTIONS, type AIModel } from '@/lib/scoring'
 import type { PromptAnalysis } from '@/lib/types'
@@ -18,6 +19,7 @@ import { RadarChart } from '@/components/RadarChart'
 import { TierMatrix } from '@/components/TierMatrix'
 import { exportToJSON, exportToCSV, exportSingleAnalysisToJSON, exportSingleAnalysisToCSV } from '@/lib/export'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { PaymentGate } from '@/components/PaymentGate'
 import { LockedContent } from '@/components/LockedContent'
 import { SimilarPrompts } from '@/components/SimilarPrompts'
@@ -27,7 +29,8 @@ import { ModelSelector } from '@/components/ModelSelector'
 import { AuthModal } from '@/components/AuthModal'
 import { UserMenu } from '@/components/UserMenu'
 import { PromptTemplates } from '@/components/PromptTemplates'
-import { saveAnalysisToDatabase, getAnalysesFromDatabase, checkUserHasCredits, decrementUserCredits } from '@/lib/database'
+import { HistoryLoadingSkeleton } from '@/components/HistoryLoadingSkeleton'
+import { saveAnalysisToDatabase, getAnalysesFromDatabase, checkUserHasCredits, decrementUserCredits, deleteAllAnalyses, deleteAnalysisById } from '@/lib/database'
 import { detectDuplicate } from '@/lib/vectorization'
 import { isDevelopmentMode, devBypassPayment } from '@/lib/supabase'
 
@@ -51,11 +54,20 @@ function App() {
   const [copiedPrompt, setCopiedPrompt] = useState(false)
   const [historyFilter, setHistoryFilter] = useState('')
   const [historySortBy, setHistorySortBy] = useState<'date' | 'score' | 'tier'>('date')
+  const [showClearDialog, setShowClearDialog] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
+  const analyzeButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     loadHistoryFromDatabase()
     loadUserId()
   }, [])
+
+  useKeyboardShortcut('Enter', () => {
+    if (promptInput.trim() && !isAnalyzing && analyzeButtonRef.current) {
+      handleAnalyze(false)
+    }
+  }, { meta: true })
 
   const loadUserId = async () => {
     const user = await spark.user()
@@ -128,9 +140,10 @@ function App() {
         
         toast.success('Analysis complete & saved')
       }
-    } catch (error) {
-      toast.error('Failed to analyze prompt')
-      console.error(error)
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to analyze prompt'
+      toast.error(errorMessage)
+      console.error('Analysis error:', error)
     } finally {
       setIsAnalyzing(false)
     }
@@ -220,6 +233,34 @@ function App() {
     }
   })
 
+  const handleClearAllHistory = async () => {
+    setIsClearing(true)
+    try {
+      const deletedCount = await deleteAllAnalyses()
+      setHistory([])
+      setCurrentAnalysis(null)
+      setShowClearDialog(false)
+      toast.success(`Deleted ${deletedCount} ${deletedCount === 1 ? 'analysis' : 'analyses'}`)
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to clear history')
+    } finally {
+      setIsClearing(false)
+    }
+  }
+
+  const handleDeleteAnalysis = async (analysisId: string) => {
+    try {
+      await deleteAnalysisById(analysisId)
+      setHistory((current) => (current || []).filter(a => a.id !== analysisId))
+      if (currentAnalysis?.id === analysisId) {
+        setCurrentAnalysis(null)
+      }
+      toast.success('Analysis deleted')
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to delete analysis')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto p-6 max-w-7xl">
@@ -285,12 +326,24 @@ function App() {
                   value={promptInput}
                   onChange={(e) => setPromptInput(e.target.value)}
                   className="min-h-[150px] font-mono text-sm"
+                  onKeyDown={(e) => {
+                    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                      e.preventDefault()
+                      if (promptInput.trim() && !isAnalyzing) {
+                        handleAnalyze(false)
+                      }
+                    }
+                  }}
                 />
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">
-                    {promptInput.length} characters (~{Math.ceil(promptInput.length / 4)} tokens)
+                    {promptInput.length} characters (~{Math.ceil(promptInput.length / 4)} tokens) • Press {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+Enter to analyze
                   </span>
-                  <Button onClick={() => handleAnalyze(false)} disabled={isAnalyzing || !promptInput.trim()}>
+                  <Button 
+                    ref={analyzeButtonRef}
+                    onClick={() => handleAnalyze(false)} 
+                    disabled={isAnalyzing || !promptInput.trim()}
+                  >
                     {isAnalyzing ? (
                       <>Analyzing...</>
                     ) : (
@@ -516,26 +569,39 @@ function App() {
                       Review your past analyses stored in the database
                     </CardDescription>
                   </div>
-                  {history && history.length > 0 && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <DownloadSimple className="w-4 h-4 mr-2" />
-                          Export All
+                  <div className="flex items-center gap-2">
+                    {history && history.length > 0 && (
+                      <>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setShowClearDialog(true)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash className="w-4 h-4 mr-2" />
+                          Clear All
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleExportAll('json')}>
-                          <FileArrowDown className="w-4 h-4 mr-2" />
-                          Export as JSON
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleExportAll('csv')}>
-                          <FileArrowDown className="w-4 h-4 mr-2" />
-                          Export as CSV
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <DownloadSimple className="w-4 h-4 mr-2" />
+                              Export All
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleExportAll('json')}>
+                              <FileArrowDown className="w-4 h-4 mr-2" />
+                              Export as JSON
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleExportAll('csv')}>
+                              <FileArrowDown className="w-4 h-4 mr-2" />
+                              Export as CSV
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -561,9 +627,12 @@ function App() {
                   </div>
                 )}
                 {isLoadingFromDB ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Database className="w-12 h-12 mx-auto mb-3 opacity-50 animate-pulse" />
-                    <p>Loading from database...</p>
+                  <div className="space-y-4">
+                    <div className="text-center py-4 text-muted-foreground">
+                      <Database className="w-8 h-8 mx-auto mb-2 opacity-50 animate-pulse" />
+                      <p className="text-sm">Loading from database...</p>
+                    </div>
+                    <HistoryLoadingSkeleton count={3} />
                   </div>
                 ) : !history || history.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
@@ -589,12 +658,11 @@ function App() {
                         {sortedHistory.map((item) => (
                         <Card
                           key={item.id}
-                          className="cursor-pointer hover:bg-accent/5 transition-colors"
-                          onClick={() => loadFromHistory(item)}
+                          className="cursor-pointer hover:bg-accent/5 transition-colors group"
                         >
                           <CardHeader className="pb-3">
                             <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 min-w-0">
+                              <div className="flex-1 min-w-0" onClick={() => loadFromHistory(item)}>
                                 <p className="font-mono text-sm truncate mb-2">{item.prompt}</p>
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <Badge className={getTierColor(item.pieClassification.tier)} variant="secondary">
@@ -611,6 +679,17 @@ function App() {
                                   </span>
                                 </div>
                               </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteAnalysis(item.id)
+                                }}
+                              >
+                                <Trash className="w-4 h-4 text-destructive" />
+                              </Button>
                             </div>
                           </CardHeader>
                         </Card>
@@ -644,6 +723,27 @@ function App() {
           loadUserId()
         }}
       />
+
+      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear All History?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all {history?.length || 0} of your saved analyses. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isClearing}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearAllHistory}
+              disabled={isClearing}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isClearing ? 'Deleting...' : 'Delete All'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

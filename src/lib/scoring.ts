@@ -7,6 +7,10 @@ export async function analyzePrompt(prompt: string, modelName: AIModel = 'gpt-4o
   const startTime = Date.now()
   const tokenCount = estimateTokens(prompt)
   
+  if (tokenCount > 8000) {
+    throw new Error('Prompt exceeds maximum length of ~32,000 characters (~8,000 tokens). Please shorten your prompt.')
+  }
+  
   const analysisPromptText = `You are an expert prompt engineer analyzing prompts using two frameworks:
 
 ICE Framework:
@@ -45,14 +49,35 @@ Return a JSON object with this exact structure:
 
   let response: string
   
-  if (modelName.startsWith('gemini-')) {
-    response = await callGemini(analysisPromptText, modelName as GeminiModel, true)
-  } else {
-    const analysisPrompt = spark.llmPrompt`${analysisPromptText}`
-    response = await spark.llm(analysisPrompt, modelName, true)
+  try {
+    if (modelName.startsWith('gemini-')) {
+      if (!isGeminiConfigured()) {
+        throw new Error('Gemini API key not configured. Please add VITE_GEMINI_API_KEY to your .env.local file.')
+      }
+      response = await callGemini(analysisPromptText, modelName as GeminiModel, true)
+    } else {
+      const analysisPrompt = spark.llmPrompt`${analysisPromptText}`
+      response = await spark.llm(analysisPrompt, modelName, true)
+    }
+  } catch (error: any) {
+    if (error.message?.includes('API key')) {
+      throw error
+    }
+    if (error.message?.includes('rate limit')) {
+      throw new Error('API rate limit exceeded. Please wait a moment and try again.')
+    }
+    if (error.message?.includes('network') || error.message?.includes('fetch')) {
+      throw new Error('Network error. Please check your connection and try again.')
+    }
+    throw new Error(`Analysis failed: ${error.message || 'Unknown error'}`)
   }
   
-  const data = JSON.parse(response)
+  let data: any
+  try {
+    data = JSON.parse(response)
+  } catch (parseError) {
+    throw new Error('Failed to parse AI response. The model may have returned invalid JSON. Please try again.')
+  }
   
   const responseTime = Date.now() - startTime
   
