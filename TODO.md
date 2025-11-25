@@ -265,11 +265,15 @@
 **IMPORTANT**: This is a Stage 4 feature (see PRD Feature Completion Stages). Do NOT start this until:
 - [ ] MVP is launched and stable (Stage 1 complete)
 - [ ] User testing completed successfully (Stage 2 complete)
-- [ ] Advanced features deployed (Stage 3 complete)
+- [ ] Advanced features deployed including RePrompt Architecture (Stage 3 complete)
 - [ ] API costs are significant enough to justify optimization
 - [ ] Product-market fit is proven
 
-**Goal**: Reduce API costs by 70%+ by training internal ML models using bulk prompt data
+**Context**: After MVP + more features are near completion and the user base is stable, we will transition from expensive LLM API calls to training internal models. This requires collecting bulk prompt datasets from online sources to train custom scoring models.
+
+**Strategic Note**: The RePrompt Architecture and enhanced export protocol (Stage 3) will provide valuable internal training data before we need to scrape external sources. User analyses with metadata become our best training dataset.
+
+**Goal**: Reduce API costs by 70%+ by training internal ML models using bulk prompt data (both user-generated and externally sourced)
 
 **Phase 1: Data Collection Infrastructure (2 weeks)**
 1. **Set up data collection pipelines**:
@@ -278,7 +282,14 @@
    mkdir -p data-pipeline/{scrapers,cleaners,labelers}
    ```
 
-2. **Build web scrapers for prompt sources**:
+2. **PRIORITY: Export internal user data first**:
+   - Use RePrompt Architecture exports (Stage 3 feature)
+   - Export all user analyses with full metadata
+   - This provides highest-quality labeled training data
+   - Estimated: 10K-50K prompts from active users
+   - Already labeled with ICE/PIE scores from production
+
+3. **Build web scrapers for external prompt sources** (only if internal data insufficient):
    - GitHub repos: awesome-chatgpt-prompts, prompt-engineering-guide
    - PromptBase API (if available)
    - Reddit: r/ChatGPT, r/PromptDesign
@@ -459,7 +470,7 @@
 
 ---
 
-### 8. Advanced Features
+### 8. Advanced Features (Stage 3)
 **Status**: 🔴 NOT STARTED  
 **Estimated Time**: Various
 
@@ -473,6 +484,18 @@
 - [ ] Share analyses publicly
 - [ ] Analytics dashboard
 - [ ] Email reports
+- [ ] **RePrompt Architecture** - Resurface high-value prompts
+- [ ] **Enhanced Metadata Exports** - Full CSV/TXT dumps with enriched data
+- [ ] **Prompt Family Clustering** - Auto-categorize by type/theme
+- [ ] **Chrono/Kairos Mapping** - Track routine vs breakthrough patterns
+
+**RePrompt Implementation Tasks**:
+- [ ] Build novelty scoring algorithm
+- [ ] Create "Top Prompts" views (Most Novel, Best Loop Breakers, etc.)
+- [ ] Implement unresolved prompt detection
+- [ ] Add prompt family classification
+- [ ] Build Chrono/Kairos cycle analyzer
+- [ ] Create export protocol with all metadata fields
 
 **Note**: Do NOT implement these until Stage 2 (User Testing) is complete and validated!
 

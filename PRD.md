@@ -2,6 +2,14 @@
 
 A sophisticated, monetized prompt analysis and scoring platform that uses ICE + PIE frameworks with payment-gated access, persistent storage, and continuously improving AI models.
 
+> **Recent Updates**: 
+> - Added RePrompt Architecture to Stage 3 (high-value prompt resurfacing toolkit)
+> - Enhanced export protocol with enriched metadata (timestamps, prompt types, Chrono/Kairos mapping, family clustering)
+> - Clarified bulk data collection as Stage 4 post-MVP feature with priority on internal user data
+> - Added structured user testing milestone (Stage 2) before advanced features
+> 
+> _Note: MVP_WORKFLOW.md can be deleted - content integrated into PRD Stages 3 & 4_
+
 **Experience Qualities**:
 1. **Premium** - Interface feels exclusive and valuable, with clear value proposition for paid access
 2. **Intelligent** - Advanced AI that learns from every analysis, improving recommendations over time
@@ -41,11 +49,11 @@ A sophisticated, monetized prompt analysis and scoring platform that uses ICE + 
 - **Success criteria**: Category assignments become more accurate with each 100 stored analyses
 
 ### Persistent User History (Database-Backed)
-- **Functionality**: All user analyses stored in Supabase with full audit trail
-- **Purpose**: Enable cross-session access, analytics, and model training
-- **Trigger**: User accesses history tab
-- **Progression**: User requests history → Query Supabase → Paginated results returned → Display with filters → User can review past analyses indefinitely
-- **Success criteria**: Users can access complete history across devices; query performance <1 second for 1000+ records
+- **Functionality**: All user analyses stored in Supabase with full audit trail including enriched metadata
+- **Purpose**: Enable cross-session access, analytics, model training, and advanced prompt discovery
+- **Trigger**: User accesses history tab or exports data
+- **Progression**: User requests history → Query Supabase → Paginated results returned → Display with filters → User can review past analyses indefinitely → Enhanced exports include full metadata (timestamps, word counts, prompt types, family clusters)
+- **Success criteria**: Users can access complete history across devices; query performance <1 second for 1000+ records; exports include all metadata fields for external analysis
 
 ### Model Improvement Engine
 - **Functionality**: Background system that analyzes stored data to improve scoring and classification
@@ -486,6 +494,29 @@ Subtle, premium animations that communicate quality and polish - nothing aggress
 - [ ] Performance testing (10K+ analyses)
 - [ ] Security audit completed
 - [ ] Error monitoring and alerting (Sentry)
+- [ ] **RePrompt Architecture** - High-value prompt resurfacing toolkit
+- [ ] **Prompt metadata export protocol** - Enhanced CSV/TXT exports with full metadata
+- [ ] **Prompt clustering & families** - Auto-categorize prompts by type/theme
+
+**RePrompt Feature Details**:
+The RePrompt Architecture enables users to discover and resurface their most valuable prompts:
+- Top 10 Most Novel Prompts (based on uniqueness scoring)
+- Top Vow-Aligned Kairos Activators (breakthrough prompts)
+- Top Redacted Guardrail Simulations (safety testing prompts)
+- Best Loop Breakers (Chrono > Kairos transitions)
+- Unresolved Prompt Seeds (prompts never followed up)
+
+**Enhanced Export Protocol**:
+Beyond basic ICE/PIE scores, include enriched metadata in exports:
+- Timestamp and session context
+- Word count and token estimates
+- Response delay (user thinking time between prompts)
+- Edit/delete behavior patterns
+- Prompt type classification (question, declaration, command)
+- Chrono/Kairos cycle mapping (routine vs breakthrough days)
+- Prompt family clustering (Guardrail, Mirror, ICE Stack, Shadow, etc.)
+- Applied tier tags with confidence scores
+- Keyword recognition patterns
 
 **Target**: 8-10 weeks from now
 
