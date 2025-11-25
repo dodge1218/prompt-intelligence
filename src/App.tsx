@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { Brain, ClockCounterClockwise, Sparkle, Lightning, DownloadSimple, FileArrowDown, CurrencyDollar, Database, MagnifyingGlass, Copy, Check, Trash } from '@phosphor-icons/react'
+import { Brain, ClockCounterClockwise, Sparkle, Lightning, DownloadSimple, FileArrowDown, CurrencyDollar, Database, MagnifyingGlass, Copy, Check, Trash, Link as LinkIcon } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { analyzePrompt, getTierColor, TIER_DESCRIPTIONS, type AIModel } from '@/lib/scoring'
 import type { PromptAnalysis } from '@/lib/types'
@@ -33,6 +33,7 @@ import { HistoryLoadingSkeleton } from '@/components/HistoryLoadingSkeleton'
 import { saveAnalysisToDatabase, getAnalysesFromDatabase, checkUserHasCredits, decrementUserCredits, deleteAllAnalyses, deleteAnalysisById } from '@/lib/database'
 import { detectDuplicate } from '@/lib/vectorization'
 import { isDevelopmentMode, devBypassPayment } from '@/lib/supabase'
+import { ChainVisualization } from '@/components/ChainVisualization'
 
 function App() {
   const [promptInput, setPromptInput] = useState('')
@@ -290,7 +291,7 @@ function App() {
         </header>
 
         <Tabs defaultValue="analyze" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+          <TabsList className="grid w-full grid-cols-4 max-w-2xl">
             <TabsTrigger value="analyze" className="gap-2">
               <Brain className="w-4 h-4" />
               Analyze
@@ -302,6 +303,10 @@ function App() {
             <TabsTrigger value="history" className="gap-2">
               <Database className="w-4 h-4" />
               History
+            </TabsTrigger>
+            <TabsTrigger value="chains" className="gap-2">
+              <LinkIcon className="w-4 h-4" />
+              Chains
             </TabsTrigger>
           </TabsList>
 
@@ -557,6 +562,10 @@ function App() {
                 }}
               />
             </div>
+          </TabsContent>
+
+          <TabsContent value="chains" className="space-y-6">
+            <ChainVisualization />
           </TabsContent>
 
           <TabsContent value="history" className="space-y-6">

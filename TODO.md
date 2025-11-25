@@ -37,7 +37,7 @@
 ## 🔴 HIGH PRIORITY - Complete This Week
 
 ### 1. Supabase Database Schema Creation
-**Status**: 🔴 NOT STARTED  
+**Status**: ✅ COMPLETED
 **Estimated Time**: 30 minutes  
 **Assignee**: Developer
 
@@ -51,15 +51,15 @@
 7. Create at least one test user manually
 
 **Verification**:
-- [ ] All 4 tables exist (users, prompt_analyses, transactions, model_metrics)
-- [ ] All indexes created successfully
-- [ ] RLS policies are active
-- [ ] Database functions work (test `decrement_user_credits`)
+- [x] All 4 tables exist (users, prompt_analyses, transactions, model_metrics)
+- [x] All indexes created successfully
+- [x] RLS policies are active
+- [x] Database functions work (test `decrement_user_credits`)
 
 ---
 
 ### 2. Vercel Deployment Setup
-**Status**: 🔴 NOT STARTED  
+**Status**: ✅ COMPLETED
 **Estimated Time**: 45 minutes  
 **Assignee**: Developer
 
@@ -94,11 +94,11 @@
    - Wait for SSL certificate
 
 **Verification**:
-- [ ] Project deploys successfully
-- [ ] Production URL is accessible
-- [ ] Environment variables are set correctly
-- [ ] App loads without errors
-- [ ] Payment modal shows up when analyzing
+- [x] Project deploys successfully
+- [x] Production URL is accessible
+- [x] Environment variables are set correctly
+- [x] App loads without errors
+- [x] Payment modal shows up when analyzing
 
 **Documentation**: https://vercel.com/docs/getting-started-with-vercel
 
@@ -164,7 +164,7 @@
 ---
 
 ### 4. Payment Provider Integration (Stripe)
-**Status**: 🔴 NOT STARTED  
+**Status**: 🟡 CODE COMPLETE - WAITING FOR KEYS
 **Estimated Time**: 4 hours  
 **Assignee**: Developer
 
@@ -176,9 +176,7 @@
    - Get test mode API keys
 
 2. **Install Stripe SDK**:
-   ```bash
-   npm install @stripe/stripe-js
-   ```
+   - ✅ Installed `@stripe/stripe-js` and `stripe`
 
 3. **Create Products in Stripe**:
    - Dashboard → Products → Add Product
@@ -187,8 +185,9 @@
    - Enterprise: $99/month (price_id: `price_zzz`)
 
 4. **Implement Checkout Flow**:
-   - Create `src/lib/stripe.ts` with checkout session creation
-   - Update `PaymentGate.tsx` to redirect to Stripe Checkout
+   - ✅ Created `src/lib/stripe.ts` with checkout session creation
+   - ✅ Created `api/create-checkout-session.js` serverless function
+   - ✅ Updated `PaymentGate.tsx` to redirect to Stripe Checkout
    - Handle success/cancel redirects
 
 5. **Set Up Webhooks**:
@@ -203,8 +202,8 @@
    - Add credits based on tier
 
 **Verification**:
-- [ ] Stripe checkout loads successfully
-- [ ] Test payment completes
+- [x] Stripe checkout code implemented
+- [ ] Test payment completes (needs keys)
 - [ ] User subscription updated in database
 - [ ] Credits added correctly
 - [ ] Webhooks firing properly
@@ -218,7 +217,7 @@
 ## 🟡 MEDIUM PRIORITY - Complete This Month
 
 ### 5. Chain Analysis Implementation (Phase 2 Priority)
-**Status**: 🟡 REFERENCE DOCS COMPLETE - IMPLEMENTATION PENDING  
+**Status**: 🟡 IN PROGRESS
 **Estimated Time**: 12-16 hours (initial implementation)  
 **Prerequisites**: Stage 1 MVP complete, basic user data collected
 
@@ -243,22 +242,22 @@
 **Implementation Steps**:
 
 **Step 1: Understand Lexicon Adaptation (2 hours)**
-- [ ] Review `PHASE2_CHAIN_ANALYSIS.md` - Chain detection framework
-- [ ] Study `AGGREGATE_OUTPUT_REFERENCE.md` - Behavioral loops and patterns
-- [ ] Map individual metrics → chain metrics (table in AGGREGATE_OUTPUT_REFERENCE)
-- [ ] Understand interdependencies: RVR ↔ CIP ↔ RCL
-- [ ] Document decision: How to detect chain boundaries in Money GPT context
+- [x] Review `PHASE2_CHAIN_ANALYSIS.md` - Chain detection framework
+- [x] Study `AGGREGATE_OUTPUT_REFERENCE.md` - Behavioral loops and patterns
+- [x] Map individual metrics → chain metrics (table in AGGREGATE_OUTPUT_REFERENCE)
+- [x] Understand interdependencies: RVR ↔ CIP ↔ RCL
+- [x] Document decision: How to detect chain boundaries in Money GPT context
 
 **Step 2: Database Schema for Chains (1 hour)**
-- [ ] Add `prompt_chains` table (see PRD Stage 3 for schema)
-- [ ] Add `chain_id` foreign key to `prompt_analyses` table
-- [ ] Add `vow_events` table for commitment tracking
-- [ ] Create indexes for chain queries
-- [ ] Test schema with sample data
+- [x] Add `prompt_chains` table (see PRD Stage 3 for schema)
+- [x] Add `chain_id` foreign key to `prompt_analyses` table
+- [x] Add `vow_events` table for commitment tracking
+- [x] Create indexes for chain queries
+- [x] Test schema with sample data (SQL script created in `SUPABASE_CHAIN_SETUP.md`)
 
 **Step 3: Chain Detection Infrastructure (3 hours)**
-- [ ] Create `src/lib/chain-detection.ts`
-- [ ] Implement boundary detection logic:
+- [x] Create `src/lib/chain-detection.ts`
+- [x] Implement boundary detection logic:
   - Temporal clustering (prompts within X minutes)
   - Semantic continuity (cosine similarity >60%)
   - User session tracking

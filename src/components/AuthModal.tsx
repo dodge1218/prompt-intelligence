@@ -26,8 +26,17 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
       return
     }
 
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters')
+    if (password.length < 8) {
+      toast.error('Password must be at least 8 characters')
+      return
+    }
+
+    const hasUpperCase = /[A-Z]/.test(password)
+    const hasLowerCase = /[a-z]/.test(password)
+    const hasNumber = /[0-9]/.test(password)
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+      toast.error('Password must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number')
       return
     }
 
@@ -192,7 +201,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Must be at least 6 characters
+                Must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number
               </p>
             </div>
 

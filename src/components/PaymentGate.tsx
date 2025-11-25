@@ -3,14 +3,39 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle, CurrencyDollar, Crown, Lightning } from '@phosphor-icons/react'
+import { checkout } from '@/lib/stripe'
+import { toast } from 'sonner'
+import { useState } from 'react'
 
 interface PaymentGateProps {
   isOpen: boolean
   onClose: () => void
-  onPurchase: (tier: 'basic' | 'pro' | 'enterprise') => void
+  onPurchase?: (tier: 'basic' | 'pro' | 'enterprise') => void
 }
 
 export function PaymentGate({ isOpen, onClose, onPurchase }: PaymentGateProps) {
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const handlePurchase = async (tier: 'basic' | 'pro' | 'enterprise') => {
+    try {
+      setLoading(tier);
+      
+      // If onPurchase prop is provided (e.g. for dev mode bypass), use it
+      if (onPurchase) {
+        onPurchase(tier);
+        return;
+      }
+
+      // Otherwise proceed with Stripe checkout
+      await checkout(tier);
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast.error('Failed to start checkout. Please try again.');
+    } finally {
+      setLoading(null);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -59,9 +84,10 @@ export function PaymentGate({ isOpen, onClose, onPurchase }: PaymentGateProps) {
               <Button 
                 className="w-full" 
                 variant="outline"
-                onClick={() => onPurchase('basic')}
+                onClick={() => handlePurchase('basic')}
+                disabled={!!loading}
               >
-                Select Basic
+                {loading === 'basic' ? 'Processing...' : 'Select Basic'}
               </Button>
             </CardContent>
           </Card>
@@ -106,9 +132,10 @@ export function PaymentGate({ isOpen, onClose, onPurchase }: PaymentGateProps) {
               </ul>
               <Button 
                 className="w-full bg-primary hover:bg-primary/90" 
-                onClick={() => onPurchase('pro')}
+                onClick={() => handlePurchase('pro')}
+                disabled={!!loading}
               >
-                Select Pro
+                {loading === 'pro' ? 'Processing...' : 'Select Pro'}
               </Button>
             </CardContent>
           </Card>
@@ -153,9 +180,10 @@ export function PaymentGate({ isOpen, onClose, onPurchase }: PaymentGateProps) {
               </ul>
               <Button 
                 className="w-full bg-secondary hover:bg-secondary/90" 
-                onClick={() => onPurchase('enterprise')}
+                onClick={() => handlePurchase('enterprise')}
+                disabled={!!loading}
               >
-                Select Enterprise
+                {loading === 'enterprise' ? 'Processing...' : 'Select Enterprise'}
               </Button>
             </CardContent>
           </Card>
