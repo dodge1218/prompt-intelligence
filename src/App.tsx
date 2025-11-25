@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Brain, ClockCounterClockwise, Sparkle, Lightning, DownloadSimple, FileArrowDown, CurrencyDollar, Database, MagnifyingGlass } from '@phosphor-icons/react'
 import { toast } from 'sonner'
-import { analyzePrompt, getTierColor, TIER_DESCRIPTIONS } from '@/lib/scoring'
+import { analyzePrompt, getTierColor, TIER_DESCRIPTIONS, type AIModel } from '@/lib/scoring'
 import type { PromptAnalysis } from '@/lib/types'
 import { RadarChart } from '@/components/RadarChart'
 import { TierMatrix } from '@/components/TierMatrix'
@@ -21,6 +21,9 @@ import { LockedContent } from '@/components/LockedContent'
 import { SimilarPrompts } from '@/components/SimilarPrompts'
 import { DiscoverPrompts } from '@/components/DiscoverPrompts'
 import { DuplicateWarning } from '@/components/DuplicateWarning'
+import { ModelSelector } from '@/components/ModelSelector'
+import { AuthModal } from '@/components/AuthModal'
+import { UserMenu } from '@/components/UserMenu'
 import { saveAnalysisToDatabase, getAnalysesFromDatabase, checkUserHasCredits, decrementUserCredits } from '@/lib/database'
 import { detectDuplicate } from '@/lib/vectorization'
 import { isDevelopmentMode, devBypassPayment } from '@/lib/supabase'
@@ -31,6 +34,7 @@ function App() {
   const [currentAnalysis, setCurrentAnalysis] = useState<PromptAnalysis | null>(null)
   const [history, setHistory] = useKV<PromptAnalysis[]>('prompt-history', [])
   const [showPaymentGate, setShowPaymentGate] = useState(false)
+  const [showAuthModal, setShowAuthModal] = useState(false)
   const [hasAccess, setHasAccess] = useState(false)
   const [analysisLocked, setAnalysisLocked] = useState(true)
   const [isLoadingFromDB, setIsLoadingFromDB] = useState(false)
@@ -40,6 +44,7 @@ function App() {
     similarity?: number
   } | null>(null)
   const [userId, setUserId] = useState<string>('')
+  const [selectedModel, setSelectedModel] = useKV<AIModel>('selected-ai-model', 'gpt-4o')
 
   useEffect(() => {
     loadHistoryFromDatabase()
@@ -98,7 +103,7 @@ function App() {
     setDuplicateDetected(null)
     setIsAnalyzing(true)
     try {
-      const analysis = await analyzePrompt(promptInput)
+      const analysis = await analyzePrompt(promptInput, selectedModel || 'gpt-4o')
       setCurrentAnalysis(analysis)
       
       const hasValidAccess = await checkAccess()
@@ -187,11 +192,14 @@ function App() {
                 <p className="text-muted-foreground text-sm">Premium Prompt Intelligence</p>
               </div>
             </div>
-            {isDevelopmentMode && (
-              <Badge variant="outline" className="text-accent border-accent">
-                Dev Mode
-              </Badge>
-            )}
+            <div className="flex items-center gap-3">
+              {isDevelopmentMode && (
+                <Badge variant="outline" className="text-accent border-accent">
+                  Dev Mode
+                </Badge>
+              )}
+              <UserMenu onSignInClick={() => setShowAuthModal(true)} />
+            </div>
           </div>
           <p className="text-muted-foreground text-sm italic">
             Turn prompts into profit. Analyze like a pro.
@@ -215,6 +223,12 @@ function App() {
           </TabsList>
 
           <TabsContent value="analyze" className="space-y-6">
+            <ModelSelector
+              selectedModel={selectedModel || 'gpt-4o'}
+              onModelChange={setSelectedModel}
+              estimatedTokens={Math.ceil(promptInput.length / 4)}
+            />
+            
             <Card>
               <CardHeader>
                 <CardTitle>Submit Prompt for Analysis</CardTitle>
@@ -514,6 +528,15 @@ function App() {
         isOpen={showPaymentGate} 
         onClose={() => setShowPaymentGate(false)}
         onPurchase={handlePurchase}
+      />
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          loadHistoryFromDatabase()
+          loadUserId()
+        }}
       />
     </div>
   )
