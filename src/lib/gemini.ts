@@ -8,11 +8,11 @@ if (apiKey) {
   genAI = new GoogleGenerativeAI(apiKey)
 }
 
-export type GeminiModel = 'gemini-1.5-pro' | 'gemini-1.5-flash' | 'gemini-1.0-pro'
+export type GeminiModel = 'gemini-3.0-pro' | 'gemini-2.5-flash' | 'gemini-1.5-pro' | 'gemini-1.5-flash' | 'gemini-1.0-pro'
 
 export async function callGemini(
   prompt: string,
-  modelName: GeminiModel = 'gemini-1.5-flash',
+  modelName: GeminiModel = 'gemini-2.5-flash',
   jsonMode: boolean = false
 ): Promise<string> {
   if (!genAI || !apiKey) {
@@ -39,6 +39,16 @@ export function isGeminiConfigured(): boolean {
 }
 
 export const GEMINI_MODELS = {
+  'gemini-3.0-pro': {
+    name: 'Gemini 3.0 Pro',
+    description: 'Next-gen reasoning & multimodal',
+    costPer1MTokens: 5.00
+  },
+  'gemini-2.5-flash': {
+    name: 'Gemini 2.5 Flash',
+    description: 'Ultra-efficient, video-ready',
+    costPer1MTokens: 0.20
+  },
   'gemini-1.5-pro': {
     name: 'Gemini 1.5 Pro',
     description: 'Highest quality, medium cost',

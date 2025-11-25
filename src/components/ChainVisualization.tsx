@@ -4,8 +4,11 @@ import { processUnchainedPrompts } from '../lib/chain-detection';
 import { ArrowClockwise } from '@phosphor-icons/react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
+import { exportChainsToCSV, exportChainsToJSON } from '../lib/chain-export';
+import { DownloadSimple, FileArrowDown } from '@phosphor-icons/react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-interface ChainData {
+export interface ChainData {
   id: string;
   start_timestamp: string;
   end_timestamp: string;
@@ -78,15 +81,38 @@ export function ChainVisualization() {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-white">Conversation Chains</h2>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleRefresh}
-          disabled={processing}
-        >
-          <ArrowClockwise className={`w-4 h-4 mr-2 ${processing ? 'animate-spin' : ''}`} />
-          {processing ? 'Analyzing...' : 'Detect Chains'}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+            disabled={processing}
+          >
+            <ArrowClockwise className={`w-4 h-4 mr-2 ${processing ? 'animate-spin' : ''}`} />
+            {processing ? 'Analyzing...' : 'Detect Chains'}
+          </Button>
+
+          {chains.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <DownloadSimple className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => exportChainsToJSON(chains)}>
+                  <FileArrowDown className="w-4 h-4 mr-2" />
+                  Export as JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportChainsToCSV(chains)}>
+                  <FileArrowDown className="w-4 h-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
       
       {chains.length === 0 ? (

@@ -4,6 +4,7 @@ A sophisticated, monetized prompt analysis and scoring platform that uses ICE + 
 
 > **Recent Updates**: 
 > - ✅ **ITERATION 3 COMPLETE**: Multi-model AI + Authentication System
+> - ✅ **STRATEGIC SHIFT**: Transitioning to Google Gemini 3.0 and 2.5 for primary intelligence to maximize cost savings and enable future multimodal (video/image) capabilities.
 > - ✅ Google Gemini API integration complete (1.5 Pro, 1.5 Flash, 1.0 Pro) - 97.6% cost savings with Flash
 > - ✅ Model selector UI with real-time cost estimation and comparison
 > - ✅ User preference persistence for model selection across sessions
@@ -64,24 +65,23 @@ A sophisticated, monetized prompt analysis and scoring platform that uses ICE + 
 
 ### Google Gemini API Integration (Multi-Model Support)
 - **Status**: ✅ COMPLETED - Full multi-model AI support
-- **Functionality**: Users can choose between GPT-4o, GPT-4o Mini, Gemini 1.5 Pro, Gemini 1.5 Flash, and Gemini 1.0 Pro for analysis
+- **Strategy Update**: Prioritizing Gemini 3.0 and 2.5 for superior reasoning and multimodal expansion (Video/Image generation).
+- **Functionality**: Users can choose between GPT-4o, Gemini 3.0 Pro, Gemini 2.5 Flash, and legacy versions.
 - **Implementation**: 
   - `gemini.ts` - Complete Gemini API integration with JSON mode support
   - `scoring.ts` - Updated to support both OpenAI and Google models
   - `ModelSelector.tsx` - Beautiful UI component for model selection with cost comparison
   - Model preference persisted using useKV for cross-session consistency
 - **Key Features**:
-  - 💰 **Cost Optimization** - Gemini Flash is 40x cheaper than GPT-4o ($0.35 vs $15 per 1M tokens)
+  - 💰 **Cost Optimization** - Gemini 2.5 Flash is projected to be ultra-low cost (<$0.20 per 1M tokens)
   - 🎯 **Real-time Cost Estimation** - Shows estimated cost per analysis based on token count
   - 🔄 **Provider Comparison** - Clear display of OpenAI vs Google options
   - 📊 **Model Information** - Descriptions and pricing for informed decisions
   - 💾 **Preference Persistence** - Selected model saved across sessions
 - **Cost Comparison**:
   - GPT-4o: $15.00 per 1M tokens
-  - GPT-4o Mini: $0.60 per 1M tokens
-  - Gemini 1.5 Pro: $7.00 per 1M tokens
-  - Gemini 1.5 Flash: $0.35 per 1M tokens (cheapest, recommended default)
-  - Gemini 1.0 Pro: $3.50 per 1M tokens
+  - Gemini 3.0 Pro: ~$5.00 per 1M tokens (High Intelligence)
+  - Gemini 2.5 Flash: ~$0.20 per 1M tokens (High Speed/Efficiency)
 - **Business Impact**: Enables sustainable pricing while maintaining quality; users can choose between premium quality and cost efficiency
 
 **Reference Files**:

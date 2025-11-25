@@ -12,9 +12,10 @@ interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  onOpenLegal: (type: 'terms' | 'privacy') => void
 }
 
-export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, onSuccess, onOpenLegal }: AuthModalProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -216,7 +217,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         </Tabs>
 
         <p className="text-xs text-center text-muted-foreground mt-4">
-          By continuing, you agree to our Terms of Service and Privacy Policy
+          By continuing, you agree to our{' '}
+          <button onClick={() => onOpenLegal('terms')} className="underline hover:text-foreground">Terms of Service</button>
+          {' '}and{' '}
+          <button onClick={() => onOpenLegal('privacy')} className="underline hover:text-foreground">Privacy Policy</button>
         </p>
       </DialogContent>
     </Dialog>

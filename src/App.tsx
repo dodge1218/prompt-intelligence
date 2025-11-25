@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useKV } from '@github/spark/hooks'
+import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { Brain, ClockCounterClockwise, Sparkle, Lightning, DownloadSimple, FileArrowDown, CurrencyDollar, Database, MagnifyingGlass, Copy, Check, Trash, Link as LinkIcon } from '@phosphor-icons/react'
+import { Brain, ClockCounterClockwise, Sparkle, Lightning, DownloadSimple, FileArrowDown, CurrencyDollar, Database, MagnifyingGlass, Copy, Check, Trash, Link as LinkIcon, ChartBar } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 import { analyzePrompt, getTierColor, TIER_DESCRIPTIONS, type AIModel } from '@/lib/scoring'
 import type { PromptAnalysis } from '@/lib/types'
@@ -32,14 +32,16 @@ import { PromptTemplates } from '@/components/PromptTemplates'
 import { HistoryLoadingSkeleton } from '@/components/HistoryLoadingSkeleton'
 import { saveAnalysisToDatabase, getAnalysesFromDatabase, checkUserHasCredits, decrementUserCredits, deleteAllAnalyses, deleteAnalysisById } from '@/lib/database'
 import { detectDuplicate } from '@/lib/vectorization'
-import { isDevelopmentMode, devBypassPayment } from '@/lib/supabase'
+import { isDevelopmentMode, devBypassPayment, supabase } from '@/lib/supabase'
 import { ChainVisualization } from '@/components/ChainVisualization'
+import { LegalModal } from '@/components/LegalDocs'
+import { AnalyticsDashboard } from '@/components/AnalyticsDashboard'
 
 function App() {
   const [promptInput, setPromptInput] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [currentAnalysis, setCurrentAnalysis] = useState<PromptAnalysis | null>(null)
-  const [history, setHistory] = useKV<PromptAnalysis[]>('prompt-history', [])
+  const [history, setHistory] = useLocalStorage<PromptAnalysis[]>('prompt-history', [])
   const [showPaymentGate, setShowPaymentGate] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [hasAccess, setHasAccess] = useState(false)
@@ -51,12 +53,14 @@ function App() {
     similarity?: number
   } | null>(null)
   const [userId, setUserId] = useState<string>('')
-  const [selectedModel, setSelectedModel] = useKV<AIModel>('selected-ai-model', 'gpt-4o')
+  const [selectedModel, setSelectedModel] = useLocalStorage<AIModel>('selected-ai-model', 'gpt-4o')
   const [copiedPrompt, setCopiedPrompt] = useState(false)
   const [historyFilter, setHistoryFilter] = useState('')
   const [historySortBy, setHistorySortBy] = useState<'date' | 'score' | 'tier'>('date')
   const [showClearDialog, setShowClearDialog] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
+  const [legalModalOpen, setLegalModalOpen] = useState(false)
+  const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy'>('terms')
   const analyzeButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -71,8 +75,10 @@ function App() {
   }, { meta: true })
 
   const loadUserId = async () => {
-    const user = await spark.user()
-    setUserId(user.id)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      setUserId(user.id)
+    }
   }
 
   const loadHistoryFromDatabase = async () => {
@@ -262,6 +268,11 @@ function App() {
     }
   }
 
+  const openLegal = (type: 'terms' | 'privacy') => {
+    setLegalModalType(type)
+    setLegalModalOpen(true)
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto p-6 max-w-7xl">
@@ -282,6 +293,9 @@ function App() {
                   Dev Mode
                 </Badge>
               )}
+              <Button variant="ghost" size="sm" onClick={() => setShowPaymentGate(true)}>
+                Pricing
+              </Button>
               <UserMenu onSignInClick={() => setShowAuthModal(true)} />
             </div>
           </div>
@@ -291,7 +305,7 @@ function App() {
         </header>
 
         <Tabs defaultValue="analyze" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+          <TabsList className="grid w-full grid-cols-5 max-w-3xl">
             <TabsTrigger value="analyze" className="gap-2">
               <Brain className="w-4 h-4" />
               Analyze
@@ -307,6 +321,10 @@ function App() {
             <TabsTrigger value="chains" className="gap-2">
               <LinkIcon className="w-4 h-4" />
               Chains
+            </TabsTrigger>
+            <TabsTrigger value="dashboard" className="gap-2">
+              <ChartBar className="w-4 h-4" />
+              Dashboard
             </TabsTrigger>
           </TabsList>
 
@@ -568,6 +586,10 @@ function App() {
             <ChainVisualization />
           </TabsContent>
 
+          <TabsContent value="dashboard" className="space-y-6">
+            <AnalyticsDashboard history={history || []} />
+          </TabsContent>
+
           <TabsContent value="history" className="space-y-6">
             <Card>
               <CardHeader>
@@ -715,6 +737,10 @@ function App() {
         <footer className="mt-12 pt-8 border-t border-border text-center text-xs text-muted-foreground space-y-1">
           <p>Your prompt intelligence, monetized and persistent.</p>
           <p className="italic">Money GPT: Where AI meets ROI.</p>
+          <div className="flex justify-center gap-4 mt-4">
+            <button onClick={() => openLegal('terms')} className="hover:text-foreground transition-colors">Terms of Service</button>
+            <button onClick={() => openLegal('privacy')} className="hover:text-foreground transition-colors">Privacy Policy</button>
+          </div>
         </footer>
       </div>
 
@@ -731,6 +757,13 @@ function App() {
           loadHistoryFromDatabase()
           loadUserId()
         }}
+        onOpenLegal={openLegal}
+      />
+
+      <LegalModal 
+        isOpen={legalModalOpen}
+        onClose={() => setLegalModalOpen(false)}
+        type={legalModalType}
       />
 
       <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>

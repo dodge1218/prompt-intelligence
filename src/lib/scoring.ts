@@ -1,7 +1,7 @@
 import type { ICEScore, PIEClassification, PromptAnalysis } from './types'
 import { callGemini, isGeminiConfigured, type GeminiModel } from './gemini'
 
-export type AIModel = 'gpt-4o' | 'gpt-4o-mini' | 'gemini-1.5-pro' | 'gemini-1.5-flash' | 'gemini-1.0-pro'
+export type AIModel = 'gpt-4o' | 'gpt-4o-mini' | 'gemini-3.0-pro' | 'gemini-2.5-flash' | 'gemini-1.5-pro' | 'gemini-1.5-flash' | 'gemini-1.0-pro'
 
 export async function analyzePrompt(prompt: string, modelName: AIModel = 'gpt-4o'): Promise<PromptAnalysis> {
   const startTime = Date.now()
@@ -56,8 +56,49 @@ Return a JSON object with this exact structure:
       }
       response = await callGemini(analysisPromptText, modelName as GeminiModel, true)
     } else {
-      const analysisPrompt = spark.llmPrompt`${analysisPromptText}`
-      response = await spark.llm(analysisPrompt, modelName, true)
+      // Check if we are in production environment (Vercel)
+      if (!import.meta.env.DEV) {
+         // Call the serverless function
+         const apiResponse = await fetch('/api/analyze-openai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: analysisPromptText, model: modelName })
+         });
+         
+         if (!apiResponse.ok) {
+            const errorData = await apiResponse.json().catch(() => ({}));
+            throw new Error(errorData.error || `Failed to analyze with OpenAI (${apiResponse.status})`);
+         }
+         
+         const data = await apiResponse.json();
+         response = data.result;
+      } else {
+         // Use Spark if available (dev environment)
+         // @ts-ignore
+         if (typeof spark !== 'undefined') {
+           // @ts-ignore
+           const analysisPrompt = spark.llmPrompt`${analysisPromptText}`
+           // @ts-ignore
+           response = await spark.llm(analysisPrompt, modelName, true)
+         } else {
+           // Fallback for dev environment without spark (e.g. standard vite)
+           // We can use the API route here too if needed, or throw an error
+           // For now, let's try the API route as fallback
+           const apiResponse = await fetch('/api/analyze-openai', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prompt: analysisPromptText, model: modelName })
+           });
+           
+           if (!apiResponse.ok) {
+              const errorData = await apiResponse.json().catch(() => ({}));
+              throw new Error(errorData.error || `Failed to analyze with OpenAI (${apiResponse.status})`);
+           }
+           
+           const data = await apiResponse.json();
+           response = data.result;
+         }
+      }
     }
   } catch (error: any) {
     if (error.message?.includes('API key')) {
@@ -160,6 +201,20 @@ export const MODEL_INFO = {
     costPer1MTokens: 0.60,
     provider: 'OpenAI'
   },
+  'gemini-3.0-pro': {
+    name: 'Gemini 3.0 Pro',
+    description: 'Next-gen reasoning & multimodal',
+    costPer1MTokens: 5.00,
+    provider: 'Google',
+    requiresConfig: true
+  },
+  'gemini-2.5-flash': {
+    name: 'Gemini 2.5 Flash',
+    description: 'Ultra-efficient, video-ready',
+    costPer1MTokens: 0.20,
+    provider: 'Google',
+    requiresConfig: true
+  },
   'gemini-1.5-pro': {
     name: 'Gemini 1.5 Pro',
     description: 'Google flagship - high quality',
@@ -192,7 +247,7 @@ export function getAvailableModels(): AIModel[] {
   const models: AIModel[] = ['gpt-4o', 'gpt-4o-mini']
   
   if (isGeminiConfigured()) {
-    models.push('gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.0-pro')
+    models.push('gemini-3.0-pro', 'gemini-2.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash')
   }
   
   return models
