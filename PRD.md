@@ -7,8 +7,9 @@ A sophisticated, monetized prompt analysis and scoring platform that uses ICE + 
 > - Enhanced export protocol with enriched metadata (timestamps, prompt types, Chrono/Kairos mapping, family clustering)
 > - Clarified bulk data collection as Stage 4 post-MVP feature with priority on internal user data
 > - Added structured user testing milestone (Stage 2) before advanced features
+> - Added Custom GPT Configuration (PIE v4.7) for advanced symbolic analysis layer (Stage 3)
 > 
-> _Note: MVP_WORKFLOW.md can be deleted - content integrated into PRD Stages 3 & 4_
+> _Note: MVP_WORKFLOW.md content has been integrated into PRD Stages 3 & 4 and can be deleted when no longer needed_
 
 **Experience Qualities**:
 1. **Premium** - Interface feels exclusive and valuable, with clear value proposition for paid access
@@ -497,6 +498,7 @@ Subtle, premium animations that communicate quality and polish - nothing aggress
 - [ ] **RePrompt Architecture** - High-value prompt resurfacing toolkit
 - [ ] **Prompt metadata export protocol** - Enhanced CSV/TXT exports with full metadata
 - [ ] **Prompt clustering & families** - Auto-categorize prompts by type/theme
+- [ ] **Custom GPT Configuration (PIE v4.7)** - Advanced symbolic analysis layer
 
 **RePrompt Feature Details**:
 The RePrompt Architecture enables users to discover and resurface their most valuable prompts:
@@ -517,6 +519,26 @@ Beyond basic ICE/PIE scores, include enriched metadata in exports:
 - Prompt family clustering (Guardrail, Mirror, ICE Stack, Shadow, etc.)
 - Applied tier tags with confidence scores
 - Keyword recognition patterns
+
+**Custom GPT Configuration (PIE v4.7)**:
+Advanced symbolic analysis system for power users - see `CUSTOM_GPT_CONFIG.md` for full specification:
+- **Expansion Protocol**: Automatic detection of high-value prompts with symbolic significance
+- **Command Set**: 8+ specialized commands for prompt archaeology and portfolio curation
+- **Auxiliary Outputs**: `annotated_prompts.md`, `mirror_fragments.csv`, `shadow_redacted.txt`
+- **Symbolic Surgery**: Advanced tools for conversational drift detection and correction
+- **Integration Points**: 
+  - Premium tier feature (Enterprise only)
+  - Batch processing mode for conversation exports
+  - Additional metadata fields in database schema
+  - Enhanced PIE classification with symbolic reasoning layer
+
+**Custom GPT TODO Plan** (tracked in `CUSTOM_GPT_CONFIG.md`):
+1. Make full lexicon and refine meta prompt
+2. Write article explaining the system
+3. Write flawless script to clean conversations.json
+4. Make custom GPT to use meta prompt
+5. Add all commands to platform
+6. Consider additional expansions based on user feedback
 
 **Target**: 8-10 weeks from now
 
