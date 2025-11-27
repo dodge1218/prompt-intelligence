@@ -1,5 +1,6 @@
 import type { ICEScore, PIEClassification, PromptAnalysis } from './types'
 import { callGemini, isGeminiConfigured, type GeminiModel } from './gemini'
+import { getContextFiles } from './context-management'
 
 export type AIModel = 'gpt-4o' | 'gpt-4o-mini' | 'gemini-3.0-pro' | 'gemini-2.5-flash' | 'gemini-1.5-pro' | 'gemini-1.5-flash' | 'gemini-1.0-pro'
 
@@ -9,6 +10,26 @@ export async function analyzePrompt(prompt: string, modelName: AIModel = 'gpt-4o
   
   if (tokenCount > 8000) {
     throw new Error('Prompt exceeds maximum length of ~32,000 characters (~8,000 tokens). Please shorten your prompt.')
+  }
+
+  // Fetch context files
+  let contextText = ''
+  try {
+    const contextFiles = await getContextFiles()
+    if (contextFiles.length > 0) {
+      const contextContent = contextFiles
+        .map(f => `File: ${f.filename}\nContent:\n${f.content}`)
+        .join('\n\n')
+      
+      // Limit context to ~10,000 characters to avoid token limits
+      if (contextContent.length > 10000) {
+        contextText = `\n\nContext from Knowledge Base (Truncated):\n${contextContent.slice(0, 10000)}...`
+      } else {
+        contextText = `\n\nContext from Knowledge Base:\n${contextContent}`
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to fetch context files for analysis:', error)
   }
   
   const analysisPromptText = `You are an expert prompt engineer analyzing prompts using two frameworks:
@@ -26,7 +47,7 @@ Tier 3 (Strategic): strategic (long-term thinking), kairos (perfect timing/insig
 Analyze this prompt:
 """
 ${prompt}
-"""
+"""${contextText}
 
 Return a JSON object with this exact structure:
 {

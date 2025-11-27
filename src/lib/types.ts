@@ -83,3 +83,13 @@ export interface DatabaseAnalysis {
   model_version: string
   response_time_ms: number
 }
+
+export interface ContextFile {
+  id: string
+  userId: string
+  filename: string
+  fileType: 'json' | 'csv' | 'md' | 'txt'
+  content: string
+  tokenCount?: number
+  createdAt: string
+}

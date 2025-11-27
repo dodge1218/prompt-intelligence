@@ -7,32 +7,24 @@ This guide will help you set up Stripe payments for Money GPT.
 2. Activate your account (or use Test Mode for development).
 
 ## 2. Create Products & Prices
-Create three products in your Stripe Dashboard:
+✅ **COMPLETED**
 
-1. **Basic Plan**
-   - Name: "Money GPT Basic"
-   - Price: $9.00 / month
-   - Copy the **Price ID** (starts with `price_...`)
-
-2. **Pro Plan**
-   - Name: "Money GPT Pro"
-   - Price: $29.00 / month
-   - Copy the **Price ID**
-
-3. **Enterprise Plan**
-   - Name: "Money GPT Enterprise"
-   - Price: $99.00 / month
-   - Copy the **Price ID**
+1. **PIE Audit Report**
+   - Name: "Prompt Intelligence Engine (PIE) Audit – One-Time Report"
+   - Price: $29.00 (One-time)
+   - Price ID: `price_1SXXcSCbXtbQTY34AJ4KwfNA`
 
 ## 3. Get API Keys
-1. Go to **Developers > API keys**.
-2. Copy the **Publishable key** (starts with `pk_...`).
-3. Copy the **Secret key** (starts with `sk_...`).
+✅ **COMPLETED**
+
+1. **Publishable key**: `pk_test_...`
+2. **Secret key**: `sk_test_...`
 
 ## 4. Configure Environment Variables
+✅ **COMPLETED**
 
 ### Local Development (`.env.local`)
-Add these variables to your `.env.local` file:
+These variables have been added to your `.env.local` file:
 
 ```env
 # Stripe Configuration
@@ -40,9 +32,7 @@ VITE_STRIPE_PUBLIC_KEY=pk_test_...
 STRIPE_SECRET_KEY=sk_test_...
 
 # Product Price IDs
-VITE_STRIPE_PRICE_BASIC=price_...
-VITE_STRIPE_PRICE_PRO=price_...
-VITE_STRIPE_PRICE_ENTERPRISE=price_...
+VITE_STRIPE_PRICE_PIE_AUDIT=price_1SXXcSCbXtbQTY34AJ4KwfNA
 
 # Webhook Secret (see step 5)
 STRIPE_WEBHOOK_SECRET=whsec_...
@@ -52,18 +42,36 @@ SUPABASE_SERVICE_KEY=...
 ```
 
 ### Vercel Production
-Add the same variables to your Vercel Project Settings.
+✅ Keys have been pushed to Vercel via CLI.
+- `VITE_STRIPE_PUBLIC_KEY`
+- `STRIPE_SECRET_KEY`
+- `VITE_STRIPE_PRICE_PIE_AUDIT`
+
+**Action Required**: You must redeploy your project for these new environment variables to take effect.
+```bash
+vercel --prod
+```
 
 ## 5. Setup Webhooks
-1. Go to **Developers > Webhooks**.
-2. Click **Add endpoint**.
-3. **Endpoint URL**: `https://your-project.vercel.app/api/stripe-webhook`
-4. **Events to listen for**:
-   - `checkout.session.completed`
-   - `customer.subscription.updated`
-   - `customer.subscription.deleted`
-5. Click **Add endpoint**.
-6. Copy the **Signing secret** (starts with `whsec_...`) and add it to your environment variables as `STRIPE_WEBHOOK_SECRET`.
+✅ **COMPLETED**
+
+1. **Endpoint URL**: `https://money-gpt.vercel.app/api/stripe-webhook`
+2. **Signing Secret**: `whsec_m4Md2jMRqGZhtbOpQMr4m7rjJl4mntYJ`
+3. **Vercel Config**: Secret added to production environment variables.
+
+## 6. Final Deployment (REQUIRED)
+Now that all environment variables are set, you must redeploy the application for them to take effect.
+
+```bash
+vercel --prod
+```
+
+## 7. Testing
+1. Open your app: https://money-gpt.vercel.app
+2. Log in.
+3. Click "Analyze" and try to purchase the audit.
+4. Use a [Stripe Test Card](https://stripe.com/docs/testing) (e.g., `4242 4242 4242 4242`).
+5. After payment, you should be redirected back and your account should be upgraded.
 
 ## 6. Testing
 1. Use [Stripe Test Cards](https://stripe.com/docs/testing) to simulate payments.

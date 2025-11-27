@@ -12,7 +12,7 @@ export default async function handler(req, res) {
       }
 
       const session = await stripe.checkout.sessions.create({
-        mode: 'subscription',
+        mode: 'payment',
         payment_method_types: ['card'],
         line_items: [
           {
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
         },
       });
 
-      res.status(200).json({ sessionId: session.id });
+      res.status(200).json({ sessionId: session.id, url: session.url });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

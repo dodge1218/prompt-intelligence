@@ -164,7 +164,7 @@
 ---
 
 ### 4. Payment Provider Integration (Stripe)
-**Status**: 🟡 CODE COMPLETE - WAITING FOR KEYS
+**Status**: ✅ READY FOR TESTING
 **Estimated Time**: 4 hours  
 **Assignee**: Developer
 
@@ -180,9 +180,9 @@
 
 3. **Create Products in Stripe**:
    - Dashboard → Products → Add Product
-   - Basic: $9/month (price_id: `price_xxx`)
-   - Pro: $29/month (price_id: `price_yyy`)
-   - Enterprise: $99/month (price_id: `price_zzz`)
+   - Name: "Prompt Intelligence Engine (PIE) Audit"
+   - Price: $29 (One-time)
+   - **IMPORTANT**: Copy the Price ID (starts with `price_`), NOT the Product ID (`prod_`)
 
 4. **Implement Checkout Flow**:
    - ✅ Created `src/lib/stripe.ts` with checkout session creation
@@ -193,7 +193,7 @@
 5. **Set Up Webhooks**:
    - Stripe Dashboard → Developers → Webhooks
    - Add endpoint: `https://your-domain.vercel.app/api/stripe-webhook`
-   - Select events: `checkout.session.completed`, `customer.subscription.updated`
+   - Select events: `checkout.session.completed`
    - Create serverless function to handle webhooks
 
 6. **Update User Credits on Payment**:
@@ -203,7 +203,7 @@
 
 **Verification**:
 - [x] Stripe checkout code implemented
-- [ ] Test payment completes (needs keys)
+- [ ] Test payment completes (keys configured)
 - [ ] User subscription updated in database
 - [ ] Credits added correctly
 - [ ] Webhooks firing properly

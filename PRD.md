@@ -120,11 +120,50 @@ A sophisticated, monetized prompt analysis and scoring platform that uses ICE + 
 ## Essential Features
 
 ### Payment Authentication Gate
-- **Functionality**: No prompt analysis output shown without valid payment/subscription
-- **Purpose**: Monetize the AI intelligence and ensure only paying users access premium insights
+- **Functionality**: No prompt analysis output shown without valid payment/subscription, with one exception.
+- **Free Tier Logic**: 
+  - New users receive **1 free analysis** ONLY after completing email verification.
+  - Unverified "username-only" accounts are strictly paywalled.
+  - After the single free analysis, all further access requires payment.
+- **Purpose**: Monetize the AI intelligence and ensure only paying users access premium insights, while offering a "taste" to verified leads.
 - **Trigger**: User attempts to view analysis results
-- **Progression**: User submits prompt → Payment check → If unpaid: payment modal → Process payment → Unlock results → Show full analysis
-- **Success criteria**: Zero analysis outputs visible to non-paying users; seamless payment flow with <3 second verification
+- **Progression**: User submits prompt → Check credits/auth → If new & verified: allow 1 free → If used/unverified: show payment modal → Process payment → Unlock results
+- **Success criteria**: Zero analysis outputs visible to non-paying users (except the 1 free verified); seamless payment flow with <3 second verification
+
+### Bulk Prompt Audit & Deep Vectorization
+- **Functionality**: Users can upload their entire prompt history (e.g., OpenAI export), which is instantly vectorized, stored, and analyzed for deep patterns.
+- **Components**:
+  1. **Import Tutorial**: Step-by-step guide for users to export data from OpenAI/ChatGPT.
+  2. **Bulk Ingestion**: Drag-and-drop upload for large JSON/ZIP files (1000s of prompts).
+  3. **Instant Vectorization**: Batch processing to generate embeddings for the entire corpus and store in Supabase.
+  4. **Top Insights Engine**: Identify the user's most "Novel" (unique) and "Salient" (impactful) prompts using vector math.
+  5. **Expansion Recommendations**: AI-generated suggestions to expand or improve their best prompt concepts.
+  6. **Deep Audit Report**: Generation of a comprehensive 10+ page PDF report summarizing their prompt DNA, strengths, and opportunities.
+- **Purpose**: High-value "hook" for power users to migrate their history and see the hidden value in their past work.
+- **Trigger**: User selects "Bulk Audit" from dashboard.
+- **Success criteria**: Process 1000 prompts < 60 seconds; PDF generation < 10 seconds; high perceived value of the "Deep Audit".
+
+### Prompt Chain Review Interface
+- **Functionality**: A dedicated workspace for exploring prompt history organized by conversation chains/threads.
+- **UI Components**:
+  - **Hideable Left Sidebar**: Replicates the familiar "ChatGPT-style" history navigation, listing recent prompt chains chronologically.
+  - **Chain Detail View**: Main content area displays the full sequence of prompts within a selected chain.
+  - **Chain Metrics**: Visual indicators in the sidebar for chain length, average ICE score, and detected "Vow" events.
+- **Purpose**: Allow users to navigate their history contextually, viewing prompts as part of a larger workflow rather than isolated events.
+- **Trigger**: User selects "Chains" tab.
+- **Success criteria**: Sidebar toggles smoothly; chains load instantly; intuitive navigation between chains.
+
+### Multi-File Context Ingestion
+- **Functionality**: Support for uploading multiple files (CSV, JSON, MD, TXT) to serve as context for prompt analysis or as a knowledge base.
+- **Capabilities**:
+  - **Multi-format Support**: Parse and extract text from structured (JSON/CSV) and unstructured (MD/TXT) files.
+  - **Hybrid Vectorization Strategy**: 
+    - **Instant**: Immediate embedding generation for smaller uploads (<5MB) for real-time use.
+    - **Background/Overnight**: Queue-based processing for large datasets, utilizing off-peak hours ("Overnight Boost") to manage compute load.
+  - **Context Awareness**: System uses this uploaded context to better understand and score user prompts (e.g., checking against a user's specific style guide, codebase, or previous successful prompts).
+- **Purpose**: Allow users to ground the AI's analysis in their specific domain knowledge or constraints, moving beyond generic scoring.
+- **Trigger**: User uploads files via "Context" or "Knowledge Base" section.
+- **Success criteria**: Upload 10MB+ files without timeout; background jobs process reliably; vector search retrieves relevant context during analysis.
 
 ### Prompt Analysis with Database Storage
 - **Functionality**: Accept prompts, analyze with LLM, store all data (prompts, scores, suggestions) to Supabase
@@ -466,9 +505,7 @@ Subtle, premium animations that communicate quality and polish - nothing aggress
 1. Create Stripe account: https://dashboard.stripe.com/register
 2. Get API keys (test mode for dev, live mode for production)
 3. Set up Products in Stripe Dashboard:
-   - **Basic**: $9/month - 50 analyses
-   - **Pro**: $29/month - 500 analyses
-   - **Enterprise**: $99/month - Unlimited analyses
+   - **PIE Audit Report**: $29 (One-time)
 4. Configure webhooks for subscription events
 5. Implement Stripe Checkout or Payment Element
 6. Test with Stripe test cards: https://stripe.com/docs/testing
@@ -608,6 +645,18 @@ Subtle, premium animations that communicate quality and polish - nothing aggress
 - [x] **Smart prompt discovery** - "Find prompts like this" and novelty ranking functions ready
 
 **Features to Add**:
+- [ ] **Bulk Prompt Audit System** (High Priority)
+  - [ ] OpenAI Export Tutorial & Import Tool
+  - [ ] Batch Vectorization Pipeline
+  - [ ] "Deep Audit" PDF Report Generator (10+ pages)
+  - [ ] Top Insights & Expansion Recommender
+- [ ] **Chain Review UI**
+  - [ ] Hideable Left Sidebar (ChatGPT-style history)
+  - [ ] Chain Detail View with Metric Overlays
+- [ ] **Multi-File Context System**
+  - [ ] File Uploader (CSV, JSON, MD)
+  - [ ] Background Vectorization Queue (pg-boss or similar)
+  - [ ] Context Retrieval RAG Pipeline
 - [ ] Batch analysis (CSV upload)
 - [ ] API access for Pro/Enterprise users
 - [ ] Team collaboration features

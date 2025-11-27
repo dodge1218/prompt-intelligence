@@ -36,6 +36,8 @@ import { isDevelopmentMode, devBypassPayment, supabase } from '@/lib/supabase'
 import { ChainVisualization } from '@/components/ChainVisualization'
 import { LegalModal } from '@/components/LegalDocs'
 import { AnalyticsDashboard } from '@/components/AnalyticsDashboard'
+import { BulkAudit } from '@/components/BulkAudit'
+import { ContextManager } from '@/components/ContextManager'
 
 function App() {
   const [promptInput, setPromptInput] = useState('')
@@ -62,11 +64,6 @@ function App() {
   const [legalModalOpen, setLegalModalOpen] = useState(false)
   const [legalModalType, setLegalModalType] = useState<'terms' | 'privacy'>('terms')
   const analyzeButtonRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    loadHistoryFromDatabase()
-    loadUserId()
-  }, [])
 
   useKeyboardShortcut('Enter', () => {
     if (promptInput.trim() && !isAnalyzing && analyzeButtonRef.current) {
@@ -106,6 +103,21 @@ function App() {
     setHasAccess(hasCredits)
     return hasCredits
   }
+
+  useEffect(() => {
+    loadHistoryFromDatabase()
+    loadUserId()
+    
+    // Check for payment success
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('session_id')) {
+      toast.success('Payment successful! Analysis unlocked.');
+      // Clear the query param to avoid showing the toast again on refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Force refresh user credits/access
+      checkAccess();
+    }
+  }, [])
 
   const handleAnalyze = async (bypassDuplicateCheck = false) => {
     if (!promptInput.trim()) {
@@ -156,8 +168,8 @@ function App() {
     }
   }
 
-  const handlePurchase = async (tier: 'basic' | 'pro' | 'enterprise') => {
-    toast.info(`Payment integration coming soon! Selected: ${tier}`)
+  const handlePurchase = async (product: string) => {
+    toast.info(`Payment integration coming soon! Selected: ${product}`)
     
     setHasAccess(true)
     setAnalysisLocked(false)
@@ -321,6 +333,14 @@ function App() {
             <TabsTrigger value="chains" className="gap-2">
               <LinkIcon className="w-4 h-4" />
               Chains
+            </TabsTrigger>
+            <TabsTrigger value="bulk" className="gap-2">
+              <FileArrowDown className="w-4 h-4" />
+              Bulk Audit
+            </TabsTrigger>
+            <TabsTrigger value="context" className="gap-2">
+              <Database className="w-4 h-4" />
+              Context
             </TabsTrigger>
             <TabsTrigger value="dashboard" className="gap-2">
               <ChartBar className="w-4 h-4" />
@@ -586,6 +606,14 @@ function App() {
             <ChainVisualization />
           </TabsContent>
 
+          <TabsContent value="bulk" className="space-y-6">
+            <BulkAudit />
+          </TabsContent>
+
+          <TabsContent value="context" className="space-y-6">
+            <ContextManager />
+          </TabsContent>
+
           <TabsContent value="dashboard" className="space-y-6">
             <AnalyticsDashboard history={history || []} />
           </TabsContent>
@@ -747,7 +775,8 @@ function App() {
       <PaymentGate 
         isOpen={showPaymentGate} 
         onClose={() => setShowPaymentGate(false)}
-        onPurchase={handlePurchase}
+        // Only pass onPurchase if we are in dev mode and want to bypass
+        onPurchase={isDevelopmentMode && devBypassPayment ? handlePurchase : undefined}
       />
 
       <AuthModal

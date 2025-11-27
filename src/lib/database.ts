@@ -100,13 +100,46 @@ export async function getUserProfile(): Promise<User | null> {
 }
 
 export async function checkUserHasCredits(): Promise<boolean> {
-  const profile = await getUserProfile()
+  const { data: { user } } = await supabase.auth.getUser()
   
+  if (!user) {
+    return false
+  }
+
+  const profile = await getUserProfile()
   if (!profile) {
     return false
   }
 
-  return profile.creditsRemaining > 0 || profile.subscriptionStatus === 'active'
+  // If user has active subscription, they always have access
+  if (profile.subscriptionStatus === 'active') {
+    return true
+  }
+
+  // Check for email verification for free tier
+  if (!user.email_confirmed_at) {
+    return false
+  }
+
+  // If verified but has 0 credits, check if they are eligible for the free welcome credit
+  // Eligibility: Verified email + 0 credits + 0 past analyses (new user)
+  if (profile.creditsRemaining === 0) {
+    const { count } = await supabase
+      .from('prompt_analyses')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+
+    if (count === 0) {
+      // Grant the 1 free credit
+      await supabase.rpc('add_user_credits', {
+        user_uuid: user.id,
+        credits_to_add: 1
+      })
+      return true
+    }
+  }
+
+  return profile.creditsRemaining > 0
 }
 
 export async function decrementUserCredits(): Promise<void> {
@@ -174,7 +207,7 @@ export async function initializeUserProfile(email: string): Promise<void> {
       email,
       subscription_status: 'trial',
       subscription_tier: 'free',
-      credits_remaining: 3,
+      credits_remaining: 0, // Start with 0, grant 1 after verification
     })
 
   if (error) {
@@ -220,4 +253,26 @@ export async function deleteAnalysisById(analysisId: string): Promise<void> {
     console.error('Failed to delete analysis:', error)
     throw new Error('Failed to delete analysis')
   }
+}
+
+export async function getPromptsByChainId(chainId: string): Promise<PromptAnalysis[]> {
+  const user = await supabase.auth.getUser()
+  
+  if (!user.data.user) {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('prompt_analyses')
+    .select('*')
+    .eq('user_id', user.data.user.id)
+    .eq('chain_id', chainId)
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Failed to fetch chain prompts:', error)
+    return []
+  }
+
+  return (data || []).map(dbAnalysisToAnalysis)
 }

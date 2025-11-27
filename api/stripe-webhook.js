@@ -41,27 +41,22 @@ export default async function handler(req, res) {
         const userId = session.client_reference_id || session.metadata?.userId;
         
         if (userId) {
-          // Determine tier based on price ID (you might need a mapping here or store tier in metadata)
-          // For now, we'll assume the price ID maps to a tier or we fetch it from Stripe
-          // A better way is to pass the tier in metadata during checkout creation
-          
-          // Let's fetch the subscription to get more details if needed
-          const subscriptionId = session.subscription;
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          // For one-time payments, we don't have a subscription object
+          // We just unlock the features for the user
           
           // Update user in Supabase
           const { error } = await supabase
             .from('users')
             .update({
-              subscription_status: 'active',
-              subscription_tier: 'pro', // This should be dynamic based on price
-              credits_remaining: 500, // Reset credits based on tier
+              subscription_status: 'active', // Mark as active/paid
+              subscription_tier: 'pro', // Upgrade to pro/audit tier
+              credits_remaining: 500, // Add credits for the audit
               updated_at: new Date().toISOString(),
             })
             .eq('id', userId);
             
           if (error) throw error;
-          console.log(`User ${userId} upgraded to active subscription`);
+          console.log(`User ${userId} upgraded to active status via one-time payment`);
         }
         break;
       }

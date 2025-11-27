@@ -80,6 +80,18 @@ CREATE TABLE IF NOT EXISTS transactions (
   credits_purchased INTEGER NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Context files table (for RAG/Knowledge Base)
+CREATE TABLE IF NOT EXISTS context_files (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  filename TEXT NOT NULL,
+  file_type TEXT NOT NULL, -- 'json', 'csv', 'md', 'txt'
+  content TEXT NOT NULL, -- Extracted text content
+  token_count INTEGER,
+  vector_embedding VECTOR(3072), -- For RAG
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 ```
 
 ---
@@ -116,6 +128,16 @@ CREATE INDEX IF NOT EXISTS idx_analyses_vector_embedding
 CREATE INDEX IF NOT EXISTS idx_transactions_user 
   ON transactions(user_id, created_at DESC);
 
+-- Index for context files
+CREATE INDEX IF NOT EXISTS idx_context_files_user 
+  ON context_files(user_id, created_at DESC);
+
+-- Vector index for context files
+CREATE INDEX IF NOT EXISTS idx_context_files_embedding 
+  ON context_files 
+  USING hnsw (vector_embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
+
 -- Index for model metrics
 CREATE INDEX IF NOT EXISTS idx_metrics_type_date 
   ON model_metrics(metric_type, recorded_at DESC);
@@ -131,6 +153,7 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE prompt_analyses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE model_metrics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE context_files ENABLE ROW LEVEL SECURITY;
 
 -- Users table policies
 CREATE POLICY "Users can view own profile"
@@ -158,6 +181,19 @@ CREATE POLICY "Users can view own transactions"
 CREATE POLICY "Service can insert transactions"
   ON transactions FOR INSERT
   WITH CHECK (true);
+
+-- Context files policies
+CREATE POLICY "Users can view own context files"
+  ON context_files FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own context files"
+  ON context_files FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own context files"
+  ON context_files FOR DELETE
+  USING (auth.uid() = user_id);
 
 -- Model metrics are read-only for users
 CREATE POLICY "Anyone can view metrics"

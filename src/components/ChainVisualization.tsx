@@ -1,12 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { processUnchainedPrompts } from '../lib/chain-detection';
-import { ArrowClockwise } from '@phosphor-icons/react';
+import { getPromptsByChainId } from '../lib/database';
+import { PromptAnalysis } from '../lib/types';
+import { 
+  ArrowClockwise, 
+  DownloadSimple, 
+  FileArrowDown, 
+  ChatCircle, 
+  TrendUp, 
+  CaretRight,
+  CalendarBlank,
+  Hash
+} from '@phosphor-icons/react';
 import { Button } from './ui/button';
 import { toast } from 'sonner';
 import { exportChainsToCSV, exportChainsToJSON } from '../lib/chain-export';
-import { DownloadSimple, FileArrowDown } from '@phosphor-icons/react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getTierColor } from '@/lib/scoring';
 
 export interface ChainData {
   id: string;
@@ -27,12 +41,23 @@ export interface ChainData {
 
 export function ChainVisualization() {
   const [chains, setChains] = useState<ChainData[]>([]);
+  const [selectedChainId, setSelectedChainId] = useState<string | null>(null);
+  const [chainPrompts, setChainPrompts] = useState<PromptAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [loadingPrompts, setLoadingPrompts] = useState(false);
 
   useEffect(() => {
     fetchChains();
   }, []);
+
+  useEffect(() => {
+    if (selectedChainId) {
+      fetchChainPrompts(selectedChainId);
+    } else {
+      setChainPrompts([]);
+    }
+  }, [selectedChainId]);
 
   async function handleRefresh() {
     setProcessing(true);
@@ -68,6 +93,10 @@ export function ChainVisualization() {
 
       if (error) throw error;
       setChains(data || []);
+      if (data && data.length > 0 && !selectedChainId) {
+        // Optional: Select first chain by default? Or leave empty.
+        // setSelectedChainId(data[0].id);
+      }
     } catch (error) {
       console.error('Error fetching chains:', error);
     } finally {
@@ -75,125 +104,249 @@ export function ChainVisualization() {
     }
   }
 
-  if (loading) return <div className="p-4 text-center">Loading chain analysis...</div>;
+  async function fetchChainPrompts(chainId: string) {
+    setLoadingPrompts(true);
+    try {
+      const prompts = await getPromptsByChainId(chainId);
+      setChainPrompts(prompts);
+    } catch (error) {
+      console.error('Error fetching chain prompts:', error);
+      toast.error('Failed to load chain details');
+    } finally {
+      setLoadingPrompts(false);
+    }
+  }
+
+  const selectedChain = chains.find(c => c.id === selectedChainId);
+
+  if (loading) return <div className="p-12 text-center text-muted-foreground">Loading chain analysis...</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-white">Conversation Chains</h2>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-            disabled={processing}
-          >
-            <ArrowClockwise className={`w-4 h-4 mr-2 ${processing ? 'animate-spin' : ''}`} />
-            {processing ? 'Analyzing...' : 'Detect Chains'}
-          </Button>
+    <div className="flex h-[calc(100vh-200px)] border rounded-lg overflow-hidden bg-background">
+      {/* Sidebar */}
+      <div className="w-80 border-r bg-muted/10 flex flex-col">
+        <div className="p-4 border-b flex items-center justify-between bg-background/50 backdrop-blur-sm">
+          <h3 className="font-semibold flex items-center gap-2">
+            <ChatCircle className="w-4 h-4" />
+            Chains
+          </h3>
+          <div className="flex gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleRefresh}
+              disabled={processing}
+              title="Detect new chains"
+              className="h-8 w-8"
+            >
+              <ArrowClockwise className={`w-4 h-4 ${processing ? 'animate-spin' : ''}`} />
+            </Button>
+            {chains.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <DownloadSimple className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => exportChainsToJSON(chains)}>
+                    <FileArrowDown className="w-4 h-4 mr-2" />
+                    JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportChainsToCSV(chains)}>
+                    <FileArrowDown className="w-4 h-4 mr-2" />
+                    CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </div>
+        
+        <ScrollArea className="flex-1">
+          <div className="p-3 space-y-2">
+            {chains.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                No chains detected yet.
+                <br />
+                Submit more prompts!
+              </div>
+            ) : (
+              chains.map((chain) => (
+                <div
+                  key={chain.id}
+                  onClick={() => setSelectedChainId(chain.id)}
+                  className={`
+                    p-3 rounded-lg cursor-pointer transition-all border
+                    ${selectedChainId === chain.id 
+                      ? 'bg-primary/10 border-primary/30 shadow-sm' 
+                      : 'bg-card hover:bg-accent/50 border-transparent hover:border-border'}
+                  `}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-xs font-mono text-muted-foreground">
+                      {new Date(chain.start_timestamp).toLocaleDateString()}
+                    </span>
+                    {chain.vow_event && (
+                      <Badge variant="outline" className="text-[10px] h-4 px-1 border-purple-500/30 text-purple-500">
+                        Vow
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm font-medium mb-2">
+                    <Hash className="w-3 h-3 text-muted-foreground" />
+                    {chain.prompt_count} Prompts
+                  </div>
 
-          {chains.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <DownloadSimple className="w-4 h-4 mr-2" />
-                  Export
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => exportChainsToJSON(chains)}>
-                  <FileArrowDown className="w-4 h-4 mr-2" />
-                  Export as JSON
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportChainsToCSV(chains)}>
-                  <FileArrowDown className="w-4 h-4 mr-2" />
-                  Export as CSV
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-      </div>
-      
-      {chains.length === 0 ? (
-        <div className="p-6 text-center border border-dashed border-gray-700 rounded-lg">
-          <p className="text-gray-400">No conversation chains detected yet.</p>
-          <p className="text-sm text-gray-500 mt-2">
-            Chains are formed automatically when you submit multiple prompts in a session.
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {chains.map((chain) => (
-            <div key={chain.id} className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 hover:border-purple-500/50 transition-colors">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <span className="text-xs font-mono text-gray-500">
-                    {new Date(chain.start_timestamp).toLocaleDateString()}
-                  </span>
-                  <div className="text-sm text-gray-300 mt-1">
-                    {new Date(chain.start_timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div className="flex gap-2">
+                    {chain.loop_pattern && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${
+                        chain.loop_pattern === 'escalating' ? 'border-green-500/30 text-green-500' :
+                        chain.loop_pattern === 'regressive' ? 'border-red-500/30 text-red-500' :
+                        'border-blue-500/30 text-blue-500'
+                      }`}>
+                        {chain.loop_pattern}
+                      </span>
+                    )}
+                    {chain.growth_delta?.mtier > 0 && (
+                      <span className="text-[10px] flex items-center text-green-500">
+                        <TrendUp className="w-3 h-3 mr-0.5" />
+                        +{chain.growth_delta.mtier} Tier
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className="bg-gray-700/50 px-2 py-1 rounded text-xs text-gray-300">
-                  {chain.prompt_count} prompts
+              ))
+            )}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col bg-background/50">
+        {selectedChain ? (
+          <>
+            {/* Chain Header */}
+            <div className="p-6 border-b bg-background">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    Chain Analysis
+                    <Badge variant="secondary" className="font-mono">
+                      {selectedChain.id.slice(0, 8)}
+                    </Badge>
+                  </h2>
+                  <p className="text-muted-foreground flex items-center gap-2 mt-1">
+                    <CalendarBlank className="w-4 h-4" />
+                    {new Date(selectedChain.start_timestamp).toLocaleString()} 
+                    <CaretRight className="w-3 h-3" />
+                    {new Date(selectedChain.end_timestamp).toLocaleTimeString()}
+                  </p>
+                </div>
+                <div className="flex gap-4 text-right">
+                  <div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider">K/C Ratio</div>
+                    <div className="text-xl font-mono font-bold text-primary">
+                      {selectedChain.kairos_chronos_ratio?.toFixed(2) || '0.00'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider">Growth</div>
+                    <div className={`text-xl font-mono font-bold ${
+                      (selectedChain.growth_delta?.sal || 0) >= 0 ? 'text-green-500' : 'text-red-500'
+                    }`}>
+                      {(selectedChain.growth_delta?.sal || 0) > 0 ? '+' : ''}
+                      {selectedChain.growth_delta?.sal || 0}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                {/* Loop Pattern */}
-                {chain.loop_pattern && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">Pattern</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full border ${
-                      chain.loop_pattern === 'escalating' ? 'border-green-500/30 text-green-400' :
-                      chain.loop_pattern === 'regressive' ? 'border-red-500/30 text-red-400' :
-                      chain.loop_pattern === 'collapsing' ? 'border-orange-500/30 text-orange-400' :
-                      'border-blue-500/30 text-blue-400'
-                    }`}>
-                      {chain.loop_pattern}
-                    </span>
-                  </div>
+              <div className="flex gap-2 flex-wrap">
+                {selectedChain.theme_cluster?.map((theme, i) => (
+                  <Badge key={i} variant="outline" className="bg-accent/5">
+                    {theme}
+                  </Badge>
+                ))}
+                {selectedChain.symbolic_role_drift && (
+                  <Badge variant="outline" className="border-purple-500/30 text-purple-500">
+                    Role: {selectedChain.symbolic_role_drift}
+                  </Badge>
                 )}
-
-                {/* Vow Event */}
-                {chain.vow_event && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 uppercase tracking-wider">Vow</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                      {chain.vow_event}
-                    </span>
-                  </div>
-                )}
-
-                {/* Role Drift */}
-                {chain.symbolic_role_drift && (
-                  <div className="text-xs">
-                    <span className="text-gray-500 uppercase tracking-wider mr-2">Role Drift</span>
-                    <span className="text-gray-300">{chain.symbolic_role_drift}</span>
-                  </div>
-                )}
-
-                {/* Growth Metrics */}
-                <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-gray-700/50">
-                  <div className="text-center">
-                    <div className="text-[10px] text-gray-500 uppercase">M-Tier</div>
-                    <div className="text-sm font-mono text-green-400">+{chain.growth_delta?.mtier || 0}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-[10px] text-gray-500 uppercase">SAL</div>
-                    <div className="text-sm font-mono text-blue-400">+{chain.growth_delta?.sal || 0}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-[10px] text-gray-500 uppercase">K/C Ratio</div>
-                    <div className="text-sm font-mono text-purple-400">{chain.kairos_chronos_ratio}</div>
-                  </div>
-                </div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            {/* Prompts List */}
+            <ScrollArea className="flex-1 p-6">
+              {loadingPrompts ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-32 bg-muted/10 animate-pulse rounded-lg" />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-8 relative before:absolute before:left-4 before:top-4 before:bottom-4 before:w-0.5 before:bg-border">
+                  {chainPrompts.map((prompt, index) => (
+                    <div key={prompt.id} className="relative pl-10">
+                      {/* Timeline Node */}
+                      <div className="absolute left-[11px] top-6 w-3 h-3 rounded-full bg-background border-2 border-primary z-10" />
+                      
+                      <Card className="border-l-4" style={{ borderLeftColor: getTierColor(prompt.pieClassification.tier).includes('emerald') ? '#10b981' : getTierColor(prompt.pieClassification.tier).includes('purple') ? '#a855f7' : '#3b82f6' }}>
+                        <CardHeader className="pb-2">
+                          <div className="flex justify-between items-start">
+                            <div className="space-y-1">
+                              <CardTitle className="text-base font-mono">
+                                {new Date(prompt.timestamp).toLocaleTimeString()}
+                              </CardTitle>
+                              <div className="flex gap-2">
+                                <Badge variant="secondary" className={getTierColor(prompt.pieClassification.tier)}>
+                                  Tier {prompt.pieClassification.tier}
+                                </Badge>
+                                <Badge variant="outline">
+                                  {prompt.pieClassification.primaryCategory}
+                                </Badge>
+                                <Badge variant="outline">
+                                  ICE: {prompt.iceScore.overall}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                            {prompt.prompt}
+                          </p>
+                          {prompt.suggestions && prompt.suggestions.length > 0 && (
+                            <div className="mt-4 pt-4 border-t">
+                              <p className="text-xs font-semibold text-muted-foreground mb-2">SUGGESTIONS</p>
+                              <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+                                {prompt.suggestions.slice(0, 2).map((s, i) => (
+                                  <li key={i}>{s}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+              <ChatCircle className="w-8 h-8 opacity-50" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Select a Chain</h3>
+            <p className="max-w-md">
+              Choose a conversation chain from the sidebar to view the detailed prompt sequence and analysis metrics.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
